@@ -1,6 +1,7 @@
 #![allow(unused_variables)]
 
 use super::CompactMap;
+use std::cmp::Ordering;
 
 
 #[test]
@@ -154,5 +155,40 @@ fn eq2() {
    m2.insert(40);
    
    assert_eq!(m1, m2);
+}
+
+#[test]
+fn ord() {
+    let mut m1 : CompactMap<u64> = CompactMap::new();
+    let mut m2 : CompactMap<u64> = CompactMap::new();
+   
+   assert!(m1.cmp(&m2) == Ordering::Equal);
+   m1.insert(10);
+   assert!(m1.cmp(&m2) == Ordering::Greater);
+   m1.insert(20);
+   assert!(m1.cmp(&m2) == Ordering::Greater);
+   m1.insert(30);
+   assert!(m1.cmp(&m2) == Ordering::Greater);
+   m2.insert(10);
+   assert!(m1.cmp(&m2) == Ordering::Greater);
+   m2.insert(20);
+   assert!(m1.cmp(&m2) == Ordering::Greater);
+   m2.insert(30);
+   assert!(m1.cmp(&m2) == Ordering::Equal);
+   
+   m1.remove(1);
+   assert!(m1.cmp(&m2) == Ordering::Less);
+   m1.remove(2);
+   assert!(m1.cmp(&m2) == Ordering::Less);
+   
+   m2.remove(2);
+   assert!(m1.cmp(&m2) == Ordering::Less);
+   m2.remove(1);
+   assert!(m1.cmp(&m2) == Ordering::Equal);
+   
+   m1.insert(40);
+   assert!(m1.cmp(&m2) == Ordering::Greater);
+   m2.insert(40);
+   assert!(m1.cmp(&m2) == Ordering::Equal);
 }
 

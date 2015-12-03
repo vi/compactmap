@@ -4,6 +4,7 @@ use std::mem;
 use std::usize;
 use std::hash::Hash;
 use std::hash::Hasher;
+use std::cmp::Ordering;
 
 #[derive(Clone,Debug)]
 enum Entry<V> {
@@ -89,37 +90,86 @@ impl<V> Hash for CompactMap<V> where V: Hash {
     }
 }
 
-impl<V> PartialEq<CompactMap<V>> for CompactMap<V> where V: PartialEq<V> {
-    fn eq(&self, other: &CompactMap<V>) -> bool {
-        for i in 0..(self.data.len()) {
-            if let Entry::Occupied(ref j) = self.data[i] {
-                if i >= other.data.len() {
-                    return false
+
+macro_rules! iterate_for_ord_and_eq {
+    ($self_:ident, $other:expr, $greater:expr, $less:expr, $j:ident, $k:ident, both_found $code:block) => {
+        for i in 0..($self_.data.len()) {
+            if let Entry::Occupied(ref $j) = $self_.data[i] {
+                if i >= $other.data.len() {
+                    return $greater;
                 }
-                if let Entry::Occupied(ref k) = other.data[i] {
-                    if k.ne(j) {
-                        return false
-                    }
+                if let Entry::Occupied(ref $k) = $other.data[i] {
+                    $code
                 } else {
-                    return false
+                    return $greater
                 }
             } else {
-                if i >= other.data.len() {
+                if i >= $other.data.len() {
                     continue;
                 }
-                if let Entry::Occupied(_) = other.data[i] {
-                    return false;
+                if let Entry::Occupied(_) = $other.data[i] {
+                    return $less
                 } 
             }
         }
-        
-        for i in (self.data.len())..(other.data.len()) {
-            if let Entry::Occupied(_) = other.data[i] {
-                return false;
+        for i in ($self_.data.len())..($other.data.len()) {
+            if let Entry::Occupied(_) = $other.data[i] {
+                return $less;
             }
         }
+    }
+}
+
+// Compare for equality disregarting removed values linked list bookkeeping
+impl<V> PartialEq<CompactMap<V>> for CompactMap<V> where V: PartialEq<V> {
+    fn eq(&self, other: &CompactMap<V>) -> bool {
+        iterate_for_ord_and_eq!(self, other, 
+                                false, false, 
+                                j, k, 
+            both_found {
+                if k.ne(j) {
+                    return false
+                }
+            });
         true
     }
 }
 
 impl<V> Eq for CompactMap<V> where V: Eq { }
+
+// We are greater then them iif { { we have i'th slot 
+// filled in and they don't } or { data in i'th slot compares
+// "greater" to our data } } and filledness status and contained data 
+// prior to i is the same.
+impl<V> PartialOrd<CompactMap<V>> for CompactMap<V> where V: PartialOrd<V> {
+    fn partial_cmp(&self, other: &CompactMap<V>) -> Option<Ordering> {
+        iterate_for_ord_and_eq!(self, other,
+                                Some(Ordering::Greater), Some(Ordering::Less),
+                                j, k, 
+            both_found {
+                let o = k.partial_cmp(j);
+                if o == Some(Ordering::Equal) {
+                    continue;
+                }
+                return o;
+            });
+        Some(Ordering::Equal)
+    }
+}
+
+impl<V> Ord for CompactMap<V> where V: Ord {
+    fn cmp(&self, other: &CompactMap<V>) -> Ordering {
+        iterate_for_ord_and_eq!(self, other,
+                                Ordering::Greater, Ordering::Less,
+                                j, k, 
+            both_found {
+                let o = k.cmp(j);
+                if o == Ordering::Equal {
+                    continue;
+                }
+                return o;
+            });
+        Ordering::Equal
+    }
+}
+
