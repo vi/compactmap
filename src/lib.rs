@@ -5,6 +5,8 @@ use std::usize;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::cmp::Ordering;
+use std::iter::FromIterator;
+use std::ops::{Index, IndexMut};
 
 #[derive(Clone,Debug)]
 enum Entry<V> {
@@ -170,6 +172,62 @@ impl<V> Ord for CompactMap<V> where V: Ord {
                 return o;
             });
         Ordering::Equal
+    }
+}
+
+impl<V> FromIterator<V> for CompactMap<V> {
+    fn from_iter<I>(iter: I) -> CompactMap<V> where I: IntoIterator<Item=V> {
+        let mut c = CompactMap::new();
+        // TODO size hint here maybe
+        for i in iter {
+            c.insert(i);
+        }
+        return c
+    }
+}
+
+impl<'a, V> FromIterator<&'a V> for CompactMap<V> where V : Copy {
+    fn from_iter<I>(iter: I) -> CompactMap<V> where I: IntoIterator<Item=&'a V> {
+        return FromIterator::<V>::from_iter(iter.into_iter().map(|&value| value))
+    }
+}
+
+impl<V> Extend<V> for CompactMap<V> {
+    fn extend<I>(&mut self, iter: I) where I: IntoIterator<Item=V> {
+        // TODO: maybe use size hint here
+        for i in iter {
+            self.insert(i);
+        }
+    }
+}
+impl<'a, V> Extend<&'a V> for CompactMap<V> where V: Copy {
+    fn extend<I>(&mut self, iter: I) where I: IntoIterator<Item=&'a V> {
+       self.extend(iter.into_iter().map(|&value| value));
+    }
+}
+
+// Index and IntexMut mostly borrowed from VecMap
+impl<V> Index<usize> for CompactMap<V> {
+    type Output = V;
+    #[inline]
+    fn index<'a>(&'a self, i: usize) -> &'a V {
+        self.get(i).expect("key not present")
+    }
+}
+impl<'a, V> Index<&'a usize> for CompactMap<V> {
+    type Output = V;
+    fn index(&self, i: &usize) -> &V {
+        self.get(*i).expect("key not present")
+    }
+}
+impl<V> IndexMut<usize> for CompactMap<V> {
+    fn index_mut(&mut self, i: usize) -> &mut V {
+        self.get_mut(i).expect("key not present")
+    }
+}
+impl<'a, V> IndexMut<&'a usize> for CompactMap<V> {
+    fn index_mut(&mut self, i: &usize) -> &mut V {
+        self.get_mut(*i).expect("key not present")
     }
 }
 
