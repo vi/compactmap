@@ -45,18 +45,33 @@ impl<V> CompactMap<V> {
         }
     }
     
-    pub fn remove(&mut self, i: usize) {
+    pub fn take(&mut self, i: usize) -> Option<V> {
         if i >= self.data.len() {
-            return
+            return None
         }
-        if let Entry::Occupied(_) = self.data[i] {
-            if i == self.data.len() - 1 {
-                self.data.truncate(i);
-            } else {
-                self.data[i] = Entry::Empty(self.free_head);
-                self.free_head = i;
+        if let Entry::Empty(_) = self.data[i] {
+            return None
+        }
+        
+        if i == self.data.len() - 1 {
+            match mem::replace(&mut self.data[i], Entry::Empty(usize::MAX)) {
+                Entry::Empty(_) => unreachable!(),
+                Entry::Occupied(v) => {
+                    self.data.truncate(i);
+                    Some(v)
+                }
             }
+        } else if let Entry::Occupied(v) = mem::replace(&mut self.data[i], Entry::Empty(self.free_head)) {
+            self.free_head = i;
+            Some(v)
+        } else {
+            unreachable!();
         }
+    }
+    
+    #[inline]
+    pub fn remove(&mut self, i: usize) {
+        self.take(i);
     }
     
     pub fn get(&self, i: usize) -> Option<&V> {
