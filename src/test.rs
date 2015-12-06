@@ -192,3 +192,16 @@ fn ord() {
    assert!(m1.cmp(&m2) == Ordering::Equal);
 }
 
+#[test]
+fn iter() {
+    let mut m1 : CompactMap<u64> = CompactMap::new();
+    m1.insert(10);
+    m1.insert(20);
+    m1.insert(30);
+    
+    let mut iter = m1.into_iter();
+    assert_eq!(iter.next(), Some((0, &10)));
+    assert_eq!(iter.next(), Some((1, &20)));
+    assert_eq!(iter.next(), Some((2, &30)));
+    assert_eq!(iter.next(), None);
+}

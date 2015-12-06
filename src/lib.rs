@@ -231,3 +231,35 @@ impl<'a, V> IndexMut<&'a usize> for CompactMap<V> {
     }
 }
 
+//TODO: iterators, compaction?, Debug
+
+pub struct IntoIter<'a, V : 'a> {
+    cm: &'a CompactMap<V>,
+    i: usize,
+}
+
+impl<'a,V> Iterator for IntoIter<'a,V> {
+    type Item = (usize, &'a V);
+    
+    fn next(&mut self) -> Option<(usize, &'a V)> {
+        loop {
+            let i = self.i;
+            self.i += 1;
+            if i >= self.cm.data.len() { 
+                return None 
+            }
+            if let Some(ref v) = self.cm.get(i) {
+                return Some((i, v));
+            }
+        }
+    }
+}
+
+impl<'a,V> IntoIterator for &'a CompactMap<V> {
+    type Item = (usize, &'a V);
+    type IntoIter = IntoIter<'a,V>;
+    fn into_iter(self) -> IntoIter<'a,V> {
+        IntoIter { cm: self, i: 0 }
+    }
+}
+
