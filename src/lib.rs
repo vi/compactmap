@@ -50,23 +50,19 @@ impl<V> CompactMap<V> {
             return None
         }
         if let Entry::Empty(_) = self.data[i] {
+            // Early return to avoid further wrong mem::replace
             return None
         }
         
-        if i == self.data.len() - 1 {
-            match mem::replace(&mut self.data[i], Entry::Empty(usize::MAX)) {
-                Entry::Empty(_) => unreachable!(),
-                Entry::Occupied(v) => {
-                    self.data.truncate(i);
-                    Some(v)
-                }
+        let empty_entry = Entry::Empty(self.free_head);
+        if let Entry::Occupied(v) = mem::replace(&mut self.data[i], empty_entry) {
+            if i == self.data.len() - 1 {
+                self.data.truncate(i);
+            } else {
+                self.free_head = i;
             }
-        } else if let Entry::Occupied(v) = mem::replace(&mut self.data[i], Entry::Empty(self.free_head)) {
-            self.free_head = i;
             Some(v)
-        } else {
-            unreachable!();
-        }
+        } else { unreachable!(); }
     }
     
     #[inline]
