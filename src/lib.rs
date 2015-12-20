@@ -1,3 +1,4 @@
+#[cfg(test)]
 mod test;
 
 use std::mem;
@@ -7,6 +8,7 @@ use std::hash::Hasher;
 use std::cmp::Ordering;
 use std::iter::FromIterator;
 use std::ops::{Index, IndexMut};
+use std::slice;
 
 #[derive(Clone,Debug)]
 enum Entry<V> {
@@ -242,35 +244,67 @@ impl<'a, V> IndexMut<&'a usize> for CompactMap<V> {
     }
 }
 
-//TODO: iterators, compaction?, Debug
+//TODO: compaction?, Debug
 
-pub struct IntoIter<'a, V : 'a> {
-    cm: &'a CompactMap<V>,
-    i: usize,
+macro_rules! generate_iterator {
+    ($self_:ident, mut) => {
+        generate_iterator!($self_ ; & mut Entry::Occupied(ref mut x), x);
+    };
+    ($self_:ident, const) => {
+        generate_iterator!($self_ ; &     Entry::Occupied(ref     x), x);
+    };
+    ($self_:ident ; $pp:pat, $x:ident) => {
+        loop {
+            let e = $self_.iter.next();
+            $self_.counter+=1;
+            if let Some(a) = e {
+                if let $pp = a {
+                    return Some(($self_.counter-1, $x));
+                }
+            } else {
+                return None;
+            }
+        }
+    };
 }
 
-impl<'a,V> Iterator for IntoIter<'a,V> {
+pub struct ReadOnlyIter<'a, V : 'a> {
+    iter: slice::Iter<'a, Entry<V>>,
+    counter : usize,
+}
+impl<'a,V> Iterator for ReadOnlyIter<'a,V> {
     type Item = (usize, &'a V);
     
     fn next(&mut self) -> Option<(usize, &'a V)> {
-        loop {
-            let i = self.i;
-            self.i += 1;
-            if i >= self.cm.data.len() { 
-                return None 
-            }
-            if let Some(ref v) = self.cm.get(i) {
-                return Some((i, v));
-            }
-        }
+        generate_iterator!(self, const);
+    }
+}
+impl<'a,V> IntoIterator for &'a CompactMap<V> {
+    type Item = (usize, &'a V);
+    type IntoIter = ReadOnlyIter<'a, V>;
+    fn into_iter(self) -> ReadOnlyIter<'a, V> {
+        ReadOnlyIter { iter: self.data.iter(), counter: 0 }
     }
 }
 
-impl<'a,V> IntoIterator for &'a CompactMap<V> {
-    type Item = (usize, &'a V);
-    type IntoIter = IntoIter<'a,V>;
-    fn into_iter(self) -> IntoIter<'a,V> {
-        IntoIter { cm: self, i: 0 }
+
+pub struct MutableIter<'a, V : 'a> {
+    iter: slice::IterMut<'a, Entry<V>>,
+    counter : usize,
+}
+impl<'a,V:'a> Iterator for MutableIter<'a,V> {
+    type Item = (usize, &'a mut V);
+    
+    fn next<'b>(&'b mut self) -> Option<(usize, &'a mut V)> {
+        generate_iterator!(self, mut);
+    }
+}
+
+impl<'a,V:'a> IntoIterator for &'a mut CompactMap<V> {
+    type Item = (usize, &'a mut V);
+    type IntoIter = MutableIter<'a, V>;
+    fn into_iter(self) -> MutableIter<'a, V> {
+        MutableIter { iter: self.data.iter_mut(), counter: 0 }
     }
 }
 
