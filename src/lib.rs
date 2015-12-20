@@ -10,14 +10,15 @@ use std::iter::FromIterator;
 use std::ops::{Index, IndexMut};
 use std::slice;
 use std::vec;
+use std::fmt;
 
-#[derive(Clone,Debug)]
+#[derive(Clone)]
 enum Entry<V> {
     Empty(usize),
     Occupied(V)
 }
 
-#[derive(Clone,Debug)]
+#[derive(Clone)]
 pub struct CompactMap<V> {
     data: Vec<Entry<V>>,
     free_head: usize
@@ -220,7 +221,7 @@ impl<'a, V> Extend<&'a V> for CompactMap<V> where V: Copy {
     }
 }
 
-// Index and IntexMut mostly borrowed from VecMap
+// Debug, Index and IntexMut mostly borrowed from VecMap
 impl<V> Index<usize> for CompactMap<V> {
     type Output = V;
     #[inline]
@@ -244,8 +245,14 @@ impl<'a, V> IndexMut<&'a usize> for CompactMap<V> {
         self.get_mut(*i).expect("key not present")
     }
 }
+impl<V: fmt::Debug> fmt::Debug for CompactMap<V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_map().entries(self).finish()
+    }
+}
 
-//TODO: compaction?, Debug
+
+//TODO: compaction?
 
 macro_rules! generate_iterator {
     ($self_:ident, mut) => {
@@ -331,4 +338,5 @@ impl<V> IntoIterator for CompactMap<V> {
         IntoIter { iter: self.data.into_iter(), counter: 0 }
     }
 }
+
 

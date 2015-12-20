@@ -226,3 +226,20 @@ fn iter() {
         assert_eq!(last_sail.next(), None);
     }
 }
+
+#[test]
+fn debug() {
+    let mut m : CompactMap<u64> = CompactMap::new();
+    let i44 = m.insert(44);
+    let i55 = m.insert(55);
+    let i66 = m.insert(66);
+    let i77 = m.insert(77);
+    let i88 = m.insert(88);
+    let i99 = m.insert(99);
+    
+    m.remove(i77);
+    m.remove(i99);
+    m.remove(i88);
+    
+    assert_eq!(format!("{:?}", m), "{0: 44, 1: 55, 2: 66}");
+}
