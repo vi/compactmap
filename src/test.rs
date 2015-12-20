@@ -200,7 +200,7 @@ fn iter() {
     m1.insert(30);
     
     {
-        let mut iter = m1.into_iter();
+        let mut iter = (&m1).into_iter();
         assert_eq!(iter.next(), Some((0, &10)));
         assert_eq!(iter.next(), Some((1, &20)));
         assert_eq!(iter.next(), Some((2, &30)));
@@ -217,4 +217,12 @@ fn iter() {
     assert_eq!(Some(&99), m1.get(1));
     assert_eq!(Some(&30), m1.get(2));
     assert_eq!(None,      m1.get(3));
+    
+    {
+        let mut last_sail = m1.into_iter();
+        assert_eq!(last_sail.next(), Some((0, 10)));
+        assert_eq!(last_sail.next(), Some((1, 99)));
+        assert_eq!(last_sail.next(), Some((2, 30)));
+        assert_eq!(last_sail.next(), None);
+    }
 }

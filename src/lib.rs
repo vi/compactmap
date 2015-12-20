@@ -9,6 +9,7 @@ use std::cmp::Ordering;
 use std::iter::FromIterator;
 use std::ops::{Index, IndexMut};
 use std::slice;
+use std::vec;
 
 #[derive(Clone,Debug)]
 enum Entry<V> {
@@ -253,6 +254,9 @@ macro_rules! generate_iterator {
     ($self_:ident, const) => {
         generate_iterator!($self_ ; &     Entry::Occupied(ref     x), x);
     };
+    ($self_:ident, plain) => {
+        generate_iterator!($self_ ;       Entry::Occupied(        x), x);
+    };
     ($self_:ident ; $pp:pat, $x:ident) => {
         loop {
             let e = $self_.iter.next();
@@ -305,6 +309,26 @@ impl<'a,V:'a> IntoIterator for &'a mut CompactMap<V> {
     type IntoIter = MutableIter<'a, V>;
     fn into_iter(self) -> MutableIter<'a, V> {
         MutableIter { iter: self.data.iter_mut(), counter: 0 }
+    }
+}
+
+
+pub struct IntoIter<V> {
+    iter: vec::IntoIter<Entry<V>>,
+    counter : usize,
+}
+impl<V> Iterator for IntoIter<V> {
+    type Item = (usize, V);
+    
+    fn next(&mut self) -> Option<(usize, V)> {
+        generate_iterator!(self, plain);
+    }
+}
+impl<V> IntoIterator for CompactMap<V> {
+    type Item = (usize, V);
+    type IntoIter = IntoIter<V>;
+    fn into_iter(self) -> IntoIter<V> {
+        IntoIter { iter: self.data.into_iter(), counter: 0 }
     }
 }
 
