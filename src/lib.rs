@@ -1,3 +1,5 @@
+#![allow(unknown_lints)]
+
 #[cfg(test)]
 mod test;
 
@@ -202,6 +204,7 @@ impl<V> FromIterator<V> for CompactMap<V> {
 }
 
 impl<'a, V> FromIterator<&'a V> for CompactMap<V> where V : Copy {
+    #[allow(map_clone)]
     fn from_iter<I>(iter: I) -> CompactMap<V> where I: IntoIterator<Item=&'a V> {
         FromIterator::<V>::from_iter(iter.into_iter().map(|&value| value))
     }
@@ -216,6 +219,7 @@ impl<V> Extend<V> for CompactMap<V> {
     }
 }
 impl<'a, V> Extend<&'a V> for CompactMap<V> where V: Copy {
+    #[allow(map_clone)]
     fn extend<I>(&mut self, iter: I) where I: IntoIterator<Item=&'a V> {
        self.extend(iter.into_iter().map(|&value| value));
     }
@@ -286,6 +290,7 @@ pub struct ReadOnlyIter<'a, V : 'a> {
 impl<'a,V> Iterator for ReadOnlyIter<'a,V> {
     type Item = (usize, &'a V);
     
+    #[allow(match_ref_pats)]
     fn next(&mut self) -> Option<(usize, &'a V)> {
         generate_iterator!(self, const);
     }
@@ -306,6 +311,7 @@ pub struct MutableIter<'a, V : 'a> {
 impl<'a,V:'a> Iterator for MutableIter<'a,V> {
     type Item = (usize, &'a mut V);
     
+    #[allow(unused_lifetimes,match_ref_pats)]
     fn next<'b>(&'b mut self) -> Option<(usize, &'a mut V)> {
         generate_iterator!(self, mut);
     }
