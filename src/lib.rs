@@ -197,13 +197,13 @@ impl<V> FromIterator<V> for CompactMap<V> {
         for i in iter {
             c.insert(i);
         }
-        return c
+        c
     }
 }
 
 impl<'a, V> FromIterator<&'a V> for CompactMap<V> where V : Copy {
     fn from_iter<I>(iter: I) -> CompactMap<V> where I: IntoIterator<Item=&'a V> {
-        return FromIterator::<V>::from_iter(iter.into_iter().map(|&value| value))
+        FromIterator::<V>::from_iter(iter.into_iter().map(|&value| value))
     }
 }
 
@@ -225,7 +225,7 @@ impl<'a, V> Extend<&'a V> for CompactMap<V> where V: Copy {
 impl<V> Index<usize> for CompactMap<V> {
     type Output = V;
     #[inline]
-    fn index<'a>(&'a self, i: usize) -> &'a V {
+    fn index(&self, i: usize) -> &V {
         self.get(i).expect("key not present")
     }
 }
