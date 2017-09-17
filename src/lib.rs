@@ -89,6 +89,22 @@ impl<V> CompactMap<V> {
             Entry::Occupied(ref mut v) => Some(v)
         })
     }
+    
+    pub fn iter<'a>(&'a self) -> ReadOnlyIter<'a, V> {
+        ReadOnlyIter { iter: self.data.iter(), counter: 0 }
+    }
+    
+    pub fn iter_mut<'a>(&'a mut self) -> MutableIter<'a, V> {
+        MutableIter { iter: self.data.iter_mut(), counter: 0 }
+    }
+    
+    pub fn into_iter(self) -> IntoIter<V> {
+        IntoIter { iter: self.data.into_iter(), counter: 0 }
+    }
+    
+    pub fn len_slow(&self) -> usize {
+        self.iter().count()
+    }
 }
 
 impl<V> Default for CompactMap<V> {
