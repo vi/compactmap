@@ -8,3 +8,4 @@ repository = "https://github.com/vi/compactmap"
 documentation = "https://docs.rs/compactmap"
 
 [dependencies]
+serde = { version = "^1.0", optional = true }

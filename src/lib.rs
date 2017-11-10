@@ -6,6 +6,9 @@
 //! Underlying data is stored in a vector, keys are just indexes of that vector.
 //! The main trick is keeping in-place linked list of freed indexes for reuse.
 
+#[cfg(feature = "serde")]
+extern crate serde;
+
 
 #[cfg(test)]
 mod test;
@@ -487,4 +490,15 @@ impl<V> IntoIterator for CompactMap<V> {
     }
 }
 
-
+#[cfg(feature = "serde")]
+use serde::ser::SerializeMap;
+#[cfg(feature = "serde")]
+impl<V:serde::Serialize> serde::Serialize for CompactMap<V> {
+    fn serialize<S : serde::Serializer>(&self, s:S) -> Result<S::Ok, S::Error> {
+        let mut map = s.serialize_map(None)?;
+        for (k, v) in self {
+            map.serialize_entry(&k, v)?;
+        }
+        map.end()
+    }
+}
