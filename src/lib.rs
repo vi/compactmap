@@ -124,7 +124,7 @@ impl<V> CompactMap<V> {
         }
     }
     
-    pub fn take(&mut self, i: usize) -> Option<V> {
+    pub fn remove(&mut self, i: usize) -> Option<V> {
         if i >= self.data.len() {
             return None
         }
@@ -142,11 +142,6 @@ impl<V> CompactMap<V> {
             }
             Some(v)
         } else { unreachable!(); }
-    }
-    
-    #[inline]
-    pub fn remove(&mut self, i: usize) {
-        self.take(i);
     }
     
     pub fn get(&self, i: usize) -> Option<&V> {
