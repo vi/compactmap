@@ -1,4 +1,11 @@
+#![warn(missing_docs)]
 #![allow(unknown_lints)]
+
+//! A map-esque data structure that small integer keys for you on insertion.
+//! Key of removed entries are reused for new insertions.
+//! Underlying data is stored in a vector, keys are just indexes of that vector.
+//! The main trick is keeping in-place linked list of freed indexes for reuse.
+
 
 #[cfg(test)]
 mod test;
@@ -20,6 +27,23 @@ enum Entry<V> {
     Occupied(V)
 }
 
+/// A map that chooses small integer keys for you.
+/// You store something into this map and then access it by ID returned by it.
+/// For small V entries are expected to take 16 bytes.
+///
+/// Example:
+///
+/// ```
+/// use compactmap::CompactMap;
+///
+/// let mut mymap : CompactMap<String> = CompactMap::new();
+/// let id_qwerty = mymap.insert("qwerty".to_string());
+/// let id_qwertz = mymap.insert("qwertz".to_string());
+/// assert_eq!(mymap[id_qwerty], "qwerty");
+/// for (id, val) in mymap {
+///     println!("{}:{}", id, val);
+/// }
+/// ```
 #[derive(Clone)]
 pub struct CompactMap<V> {
     data: Vec<Entry<V>>,
@@ -27,12 +51,61 @@ pub struct CompactMap<V> {
 }
 
 impl<V> CompactMap<V> {
+    /// Creates an empty `CompactMap`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use compactmap::CompactMap;
+    /// let mut map: CompactMap<String> = CompactMap::new();
+    /// ```
     pub fn new() -> CompactMap<V> {
         CompactMap {
             data: vec![],
             free_head: usize::MAX
         }
     }
+
+    /// Creates an empty `CompactMap` with space for at least `capacity`
+    /// elements before resizing.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use compactmap::CompactMap;
+    /// let mut map: CompactMap<String> = CompactMap::with_capacity(10);
+    /// ```
+    pub fn with_capacity(capacity: usize) -> Self {
+        CompactMap {
+            data: Vec::with_capacity(capacity),
+            free_head: usize::MAX
+        }
+    }
+
+    /// Returns capacity of the underlying vector.
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        self.data.capacity()
+    }
+
+    /// Reserves capacity for `CompactMap`'s underlying vector.
+    /// If you just cleared M elements from the map and want to insert N
+    /// more elements, you'll probably need to reserve N-M elements.
+    pub fn reserve(&mut self, len: usize) {
+        self.data.reserve(len);
+    }
+    
+    /// Reserves capacity for `CompactMap`'s underlying vector.
+    /// If you just cleared M elements from the map and want to insert N
+    /// more elements, you'll probably need to reserve N-M elements.
+    pub fn reserve_exact(&mut self, len: usize) {
+        self.data.reserve_exact(len);
+    }
+    
+    // TODO: keys
+    // TODO: values
+    // TODO: values_mut
+    
     
     pub fn insert(&mut self, v: V) -> usize {
         let head = self.free_head;
