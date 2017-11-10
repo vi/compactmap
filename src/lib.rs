@@ -163,12 +163,12 @@ impl<V> CompactMap<V> {
         })
     }
     
-    pub fn iter<'a>(&'a self) -> ReadOnlyIter<'a, V> {
-        ReadOnlyIter { iter: self.data.iter(), counter: 0 }
+    pub fn iter<'a>(&'a self) -> Iter<'a, V> {
+        Iter { iter: self.data.iter(), counter: 0 }
     }
     
-    pub fn iter_mut<'a>(&'a mut self) -> MutableIter<'a, V> {
-        MutableIter { iter: self.data.iter_mut(), counter: 0 }
+    pub fn iter_mut<'a>(&'a mut self) -> IterMut<'a, V> {
+        IterMut { iter: self.data.iter_mut(), counter: 0 }
     }
     
     pub fn into_iter(self) -> IntoIter<V> {
@@ -364,11 +364,11 @@ macro_rules! generate_iterator {
     };
 }
 
-pub struct ReadOnlyIter<'a, V : 'a> {
+pub struct Iter<'a, V : 'a> {
     iter: slice::Iter<'a, Entry<V>>,
     counter : usize,
 }
-impl<'a,V> Iterator for ReadOnlyIter<'a,V> {
+impl<'a,V> Iterator for Iter<'a,V> {
     type Item = (usize, &'a V);
     
     #[allow(match_ref_pats)]
@@ -378,18 +378,18 @@ impl<'a,V> Iterator for ReadOnlyIter<'a,V> {
 }
 impl<'a,V> IntoIterator for &'a CompactMap<V> {
     type Item = (usize, &'a V);
-    type IntoIter = ReadOnlyIter<'a, V>;
-    fn into_iter(self) -> ReadOnlyIter<'a, V> {
-        ReadOnlyIter { iter: self.data.iter(), counter: 0 }
+    type IntoIter = Iter<'a, V>;
+    fn into_iter(self) -> Iter<'a, V> {
+        Iter { iter: self.data.iter(), counter: 0 }
     }
 }
 
 
-pub struct MutableIter<'a, V : 'a> {
+pub struct IterMut<'a, V : 'a> {
     iter: slice::IterMut<'a, Entry<V>>,
     counter : usize,
 }
-impl<'a,V:'a> Iterator for MutableIter<'a,V> {
+impl<'a,V:'a> Iterator for IterMut<'a,V> {
     type Item = (usize, &'a mut V);
     
     #[allow(unused_lifetimes,match_ref_pats)]
@@ -400,9 +400,9 @@ impl<'a,V:'a> Iterator for MutableIter<'a,V> {
 
 impl<'a,V:'a> IntoIterator for &'a mut CompactMap<V> {
     type Item = (usize, &'a mut V);
-    type IntoIter = MutableIter<'a, V>;
-    fn into_iter(self) -> MutableIter<'a, V> {
-        MutableIter { iter: self.data.iter_mut(), counter: 0 }
+    type IntoIter = IterMut<'a, V>;
+    fn into_iter(self) -> IterMut<'a, V> {
+        IterMut { iter: self.data.iter_mut(), counter: 0 }
     }
 }
 
