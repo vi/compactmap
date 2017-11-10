@@ -1,9 +1,10 @@
 [package]
 name = "compactmap"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Vitaly _Vi Shukela <vi0oss@gmail.com>", "Eduard-Mihai Burtescu <edy.burt@gmail.com>"]
 description = "Compact Vec-based map that choses assigns IDs for your values on it's own. Not everything is implemented so far."
 license = "MIT"
 repository = "https://github.com/vi/compactmap"
+documentation = "https://docs.rs/compactmap"
 
 [dependencies]
