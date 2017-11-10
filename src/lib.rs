@@ -125,6 +125,13 @@ impl<V> Hash for CompactMap<V> where V: Hash {
     }
 }
 
+// [Partial]Eq impls are based on onces from VecMap
+
+impl<V: PartialEq> PartialEq for CompactMap<V> {
+    fn eq(&self, other: &Self) -> bool {
+        self.iter().eq(other.iter())
+    }
+}
 
 macro_rules! iterate_for_ord_and_eq {
     ($self_:ident, $other:expr, $greater:expr, $less:expr, $j:ident, $k:ident, both_found $code:block) => {
@@ -155,22 +162,7 @@ macro_rules! iterate_for_ord_and_eq {
     }
 }
 
-// Compare for equality disregarting removed values linked list bookkeeping
-impl<V> PartialEq<CompactMap<V>> for CompactMap<V> where V: PartialEq<V> {
-    fn eq(&self, other: &CompactMap<V>) -> bool {
-        iterate_for_ord_and_eq!(self, other, 
-                                false, false, 
-                                j, k, 
-            both_found {
-                if k.ne(j) {
-                    return false
-                }
-            });
-        true
-    }
-}
-
-impl<V> Eq for CompactMap<V> where V: Eq { }
+impl<V: Eq> Eq for CompactMap<V> {}
 
 // We are greater then them iif { { we have i'th slot 
 // filled in and they don't } or { data in i'th slot compares
