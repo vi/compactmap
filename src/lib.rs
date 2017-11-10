@@ -1,4 +1,4 @@
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 #![allow(unknown_lints)]
 
 //! A map-esque data structure that small integer keys for you on insertion.
@@ -105,8 +105,34 @@ impl<V> CompactMap<V> {
     // TODO: keys
     // TODO: values
     // TODO: values_mut
+    // TODO: append
+    // TODO: clear
+    // TODO: entry
     
+    /// Iterating the map to check if it is empty.
+    /// O(n) where n is historical maximum element count.
+    pub fn is_empty_slow(&self) -> bool {
+        return self.len_slow() == 0
+    }
     
+    /// Inserts a value into the map. The map generates and returns ID of
+    /// the inserted element.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use compactmap::CompactMap;
+    ///
+    /// let mut map = CompactMap::new();
+    /// assert_eq!(map.is_empty_slow(), true);
+    /// assert_eq!(map.insert(37), 0);
+    /// assert_eq!(map.is_empty_slow(), false);
+    ///
+    /// assert_eq!(map.insert(37), 1);
+    /// assert_eq!(map.insert(37), 2);
+    /// assert_eq!(map.insert(44), 3);
+    /// assert_eq!(map.len_slow(), 4);
+    /// ```
     pub fn insert(&mut self, v: V) -> usize {
         let head = self.free_head;
         let entry = Entry::Occupied(v);
@@ -124,6 +150,16 @@ impl<V> CompactMap<V> {
         }
     }
     
+    /// Removes a key from the map, returning the value at the key if the key
+    /// was previously in the map.
+    /// ```
+    /// use compactmap::CompactMap;
+    ///
+    /// let mut map = CompactMap::new();
+    /// let id = map.insert("a");
+    /// assert_eq!(map.remove(id), Some("a"));
+    /// assert_eq!(map.remove(123), None);
+    /// ```
     pub fn remove(&mut self, i: usize) -> Option<V> {
         if i >= self.data.len() {
             return None
@@ -144,6 +180,7 @@ impl<V> CompactMap<V> {
         } else { unreachable!(); }
     }
     
+    /// Returns a reference to the value corresponding to the key.
     pub fn get(&self, i: usize) -> Option<&V> {
         self.data.get(i).and_then(|entry| match *entry {
             Entry::Empty(_) => None,
@@ -151,6 +188,7 @@ impl<V> CompactMap<V> {
         })
     }
     
+    /// Returns a mutable reference to the value corresponding to the key.
     pub fn get_mut(&mut self, i: usize) -> Option<&mut V> {
         self.data.get_mut(i).and_then(|entry| match *entry {
             Entry::Empty(_) => None,
@@ -158,18 +196,44 @@ impl<V> CompactMap<V> {
         })
     }
     
+    /// Returns an iterator visiting all key-value pairs in unspecified order.
+    /// The iterator's element type is `(usize, &'r V)`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use compactmap::CompactMap;
+    ///
+    /// let mut map = CompactMap::new();
+    /// map.insert("a");
+    /// map.insert("c");
+    /// map.insert("b");
+    ///
+    /// // Print `1: a`, `2: b` and `3: c`.
+    /// for (key, value) in map.iter() {
+    ///     println!("{}: {}", key, value);
+    /// }
+    /// ```
     pub fn iter<'a>(&'a self) -> Iter<'a, V> {
         Iter { iter: self.data.iter(), counter: 0 }
     }
     
+    /// Returns an iterator visiting all key-value pairs in unspecified order,
+    /// with mutable references to the values.
+    /// The iterator's element type is `(usize, &'r mut V)`
     pub fn iter_mut<'a>(&'a mut self) -> IterMut<'a, V> {
         IterMut { iter: self.data.iter_mut(), counter: 0 }
     }
     
+    /// Returns an iterator visiting all key-value pairs in unspecified order,
+    /// the keys, consuming the original `CompactMap`.
+    /// The iterator's element type is `(usize, V)`.
     pub fn into_iter(self) -> IntoIter<V> {
         IntoIter { iter: self.data.into_iter(), counter: 0 }
     }
     
+    /// Iterates the map to get number of elements.
+    /// O(n) where n is historical maximum element count.
     pub fn len_slow(&self) -> usize {
         self.iter().count()
     }
@@ -359,6 +423,7 @@ macro_rules! generate_iterator {
     };
 }
 
+/// An iterator over the key-value pairs of a map.
 pub struct Iter<'a, V : 'a> {
     iter: slice::Iter<'a, Entry<V>>,
     counter : usize,
@@ -379,7 +444,8 @@ impl<'a,V> IntoIterator for &'a CompactMap<V> {
     }
 }
 
-
+/// An iterator over the key-value pairs of a map, with the
+/// values being mutable.
 pub struct IterMut<'a, V : 'a> {
     iter: slice::IterMut<'a, Entry<V>>,
     counter : usize,
@@ -401,7 +467,7 @@ impl<'a,V:'a> IntoIterator for &'a mut CompactMap<V> {
     }
 }
 
-
+/// A consuming iterator over the key-value pairs of a map.
 pub struct IntoIter<V> {
     iter: vec::IntoIter<Entry<V>>,
     counter : usize,
