@@ -5,9 +5,9 @@
 //! Key of removed entries are reused for new insertions.
 //! Underlying data is stored in a vector, keys are just indexes of that vector.
 //! The main trick is keeping in-place linked list of freed indexes for reuse.
-
-#[cfg(feature = "serde")]
-extern crate serde;
+//!
+//! Serde is supported. If you need pre-computed length at serialization time
+//! (for example, for bincode), use serde_ser_len feature.
 
 
 #[cfg(test)]
@@ -239,6 +239,16 @@ impl<V> CompactMap<V> {
     /// O(n) where n is historical maximum element count.
     pub fn len_slow(&self) -> usize {
         self.iter().count()
+    }
+    
+    fn reindex(&mut self) {
+        self.free_head = usize::MAX;
+        for i in 0..self.data.len() {
+            if let Entry::Empty(ref mut head) = self.data[i] {
+                *head = self.free_head;
+                self.free_head = i;
+            }
+        }
     }
 }
 
@@ -491,14 +501,88 @@ impl<V> IntoIterator for CompactMap<V> {
 }
 
 #[cfg(feature = "serde")]
-use serde::ser::SerializeMap;
-#[cfg(feature = "serde")]
-impl<V:serde::Serialize> serde::Serialize for CompactMap<V> {
-    fn serialize<S : serde::Serializer>(&self, s:S) -> Result<S::Ok, S::Error> {
-        let mut map = s.serialize_map(None)?;
-        for (k, v) in self {
-            map.serialize_entry(&k, v)?;
+mod serdizer {
+    extern crate serde;
+    
+    use super::CompactMap;
+    use super::Entry;
+    
+    use std::usize;
+    use self::serde::ser::SerializeMap;
+    
+    impl<V:serde::Serialize> serde::Serialize for CompactMap<V> {
+        fn serialize<S : serde::Serializer>(&self, s:S) -> Result<S::Ok, S::Error> {
+            #[cfg(feature = "serde_ser_len")]
+            let len = Some(self.len_slow());
+            #[cfg(not(feature = "serde_ser_len"))]
+            let len = None;
+            
+            let mut map = s.serialize_map(len)?;
+            for (k, v) in self {
+                map.serialize_entry(&k, v)?;
+            }
+            map.end()
         }
-        map.end()
+    }
+    
+    // Deserializer based on https://serde.rs/deserialize-map.html
+    
+    use std::fmt;
+    use std::marker::PhantomData;
+    
+    use self::serde::de::{Deserialize, Deserializer, Visitor, MapAccess};
+    
+    struct MyMapVisitor<V> {
+        marker: PhantomData<fn() -> CompactMap<V>>
+    }
+    
+    impl<V> MyMapVisitor<V> {
+        fn new() -> Self {
+            MyMapVisitor {
+                marker: PhantomData
+            }
+        }
+    }
+    
+    impl<'de, V> Visitor<'de> for MyMapVisitor<V>
+        where V: Deserialize<'de>
+    {
+        type Value = CompactMap<V>;
+    
+        // Format a message stating what data this Visitor expects to receive.
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a map with small nonnegative integer keys")
+        }
+
+        fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+            where M: MapAccess<'de>
+        {
+            let mut map = CompactMap::with_capacity(access.size_hint().unwrap_or(0));
+    
+            while let Some((key, value)) = access.next_entry()? {
+            
+                // because of Vec::resize_default is unstable
+                while map.data.len() <= key {
+                    map.data.push(Entry::Empty(usize::MAX));
+                }
+                map.data[key] = Entry::Occupied(value);
+            }
+            map.reindex();
+    
+            Ok(map)
+        }
+    }
+    
+    // This is the trait that informs Serde how to deserialize MyMap.
+    impl<'de, V> Deserialize<'de> for CompactMap<V>
+        where V: Deserialize<'de>
+    {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where D: Deserializer<'de>
+        {
+            // Instantiate our Visitor and ask the Deserializer to drive
+            // it over the input data, resulting in an instance of MyMap.
+            deserializer.deserialize_map(MyMapVisitor::new())
+        }
     }
 }

@@ -9,3 +9,8 @@ documentation = "https://docs.rs/compactmap"
 
 [dependencies]
 serde = { version = "^1.0", optional = true }
+
+[features]
+# Calculate length for serializing (for bincode, for example)
+serde_ser_len = []
+
