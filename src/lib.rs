@@ -30,6 +30,15 @@ enum Entry<V> {
     Occupied(V)
 }
 
+impl<V> Entry<V> {
+    fn is_empty(&self) -> bool {
+        match self {
+            &Entry::Empty(_) => true,
+            _ => false,
+        }
+    }
+}
+
 /// A map that chooses small integer keys for you.
 /// You store something into this map and then access it by ID returned by it.
 /// For small V entries are expected to take 16 bytes.
@@ -241,6 +250,40 @@ impl<V> CompactMap<V> {
         self.iter().count()
     }
     
+    /// Trims the `CompactMap` of any excess capacity.
+    ///
+    /// Rescans the whole map to reindex empty slots. O(n).
+    ///
+    /// The collection may reserve more space to avoid frequent reallocations.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use compactmap::CompactMap;
+    /// let mut map: CompactMap<&str> = CompactMap::with_capacity(10);
+    /// assert_eq!(map.capacity(), 10);
+    /// map.shrink_to_fit();
+    /// assert_eq!(map.capacity(), 0);
+    /// map.insert("qwe");
+    /// map.insert("345");
+    /// map.insert("555");
+    /// map.remove(1);
+    /// map.shrink_to_fit();
+    /// assert_eq!(map.capacity(), 2);
+    /// ```
+    pub fn shrink_to_fit(&mut self) {
+        // strip off trailing `Empty`s
+        if let Some(idx) = self.data.iter().rposition(Entry::is_empty) {
+            self.data.truncate(idx + 1);
+        } else {
+            self.data.clear();
+        };
+
+        self.data.shrink_to_fit();
+        self.reindex();
+    }
+
+    
     fn reindex(&mut self) {
         self.free_head = usize::MAX;
         for i in 0..self.data.len() {
@@ -407,9 +450,6 @@ impl<V: fmt::Debug> fmt::Debug for CompactMap<V> {
         f.debug_map().entries(self).finish()
     }
 }
-
-
-//TODO: compaction?
 
 macro_rules! generate_iterator {
     ($self_:ident, mut) => {
