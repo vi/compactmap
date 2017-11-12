@@ -118,8 +118,24 @@ impl<V> CompactMap<V> {
     // TODO: values
     // TODO: values_mut
     // TODO: append
-    // TODO: clear
     // TODO: entry
+    
+    /// Clears the map, removing all key-value pairs.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use compactmap::CompactMap;
+    ///
+    /// let mut a = CompactMap::new();
+    /// a.insert("a");
+    /// a.clear();
+    /// assert!(a.is_empty_slow());
+    /// ```
+    pub fn clear(&mut self) { 
+        self.free_head = usize::MAX;
+        self.data.clear() ;
+    }
     
     /// Iterating the map to check if it is empty.
     /// O(n) where n is historical maximum element count.
