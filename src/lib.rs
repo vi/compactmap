@@ -24,12 +24,12 @@ use std::slice;
 use std::vec;
 use std::fmt;
 
-const SENTINEL : usize = usize::MAX;
+const SENTINEL: usize = usize::MAX;
 
 #[derive(Clone)]
 enum Entry<V> {
     Empty(usize),
-    Occupied(V)
+    Occupied(V),
 }
 
 impl<V> Entry<V> {
@@ -61,7 +61,7 @@ impl<V> Entry<V> {
 #[derive(Clone)]
 pub struct CompactMap<V> {
     data: Vec<Entry<V>>,
-    free_head: usize
+    free_head: usize,
 }
 
 impl<V> CompactMap<V> {
@@ -76,7 +76,7 @@ impl<V> CompactMap<V> {
     pub fn new() -> CompactMap<V> {
         CompactMap {
             data: vec![],
-            free_head: SENTINEL
+            free_head: SENTINEL,
         }
     }
 
@@ -92,7 +92,7 @@ impl<V> CompactMap<V> {
     pub fn with_capacity(capacity: usize) -> Self {
         CompactMap {
             data: Vec::with_capacity(capacity),
-            free_head: SENTINEL
+            free_head: SENTINEL,
         }
     }
 
@@ -108,20 +108,20 @@ impl<V> CompactMap<V> {
     pub fn reserve(&mut self, len: usize) {
         self.data.reserve(len);
     }
-    
+
     /// Reserves capacity for `CompactMap`'s underlying vector.
     /// If you just cleared M elements from the map and want to insert N
     /// more elements, you'll probably need to reserve N-M elements.
     pub fn reserve_exact(&mut self, len: usize) {
         self.data.reserve_exact(len);
     }
-    
+
     // TODO: keys
     // TODO: values
     // TODO: values_mut
     // TODO: append
     // TODO: entry
-    
+
     /// Clears the map, removing all key-value pairs.
     ///
     /// # Examples
@@ -134,17 +134,17 @@ impl<V> CompactMap<V> {
     /// a.clear();
     /// assert!(a.is_empty_slow());
     /// ```
-    pub fn clear(&mut self) { 
+    pub fn clear(&mut self) {
         self.free_head = SENTINEL;
-        self.data.clear() ;
+        self.data.clear();
     }
-    
+
     /// Iterating the map to check if it is empty.
     /// O(n) where n is historical maximum element count.
     pub fn is_empty_slow(&self) -> bool {
         self.len_slow() == 0
     }
-    
+
     /// Inserts a value into the map. The map generates and returns ID of
     /// the inserted element.
     ///
@@ -175,11 +175,11 @@ impl<V> CompactMap<V> {
                     self.free_head = next;
                     head
                 }
-                Entry::Occupied(_) => unreachable!()
+                Entry::Occupied(_) => unreachable!(),
             }
         }
     }
-    
+
     /// Removes a key from the map, returning the value at the key if the key
     /// was previously in the map.
     /// ```
@@ -192,13 +192,13 @@ impl<V> CompactMap<V> {
     /// ```
     pub fn remove(&mut self, i: usize) -> Option<V> {
         if i >= self.data.len() {
-            return None
+            return None;
         }
         if let Entry::Empty(_) = self.data[i] {
             // Early return to avoid further wrong mem::replace
-            return None
+            return None;
         }
-        
+
         let empty_entry = Entry::Empty(self.free_head);
         if let Entry::Occupied(v) = mem::replace(&mut self.data[i], empty_entry) {
             if i == self.data.len() - 1 {
@@ -207,25 +207,27 @@ impl<V> CompactMap<V> {
                 self.free_head = i;
             }
             Some(v)
-        } else { unreachable!(); }
+        } else {
+            unreachable!();
+        }
     }
-    
+
     /// Returns a reference to the value corresponding to the key.
     pub fn get(&self, i: usize) -> Option<&V> {
         self.data.get(i).and_then(|entry| match *entry {
             Entry::Empty(_) => None,
-            Entry::Occupied(ref v) => Some(v)
+            Entry::Occupied(ref v) => Some(v),
         })
     }
-    
+
     /// Returns a mutable reference to the value corresponding to the key.
     pub fn get_mut(&mut self, i: usize) -> Option<&mut V> {
         self.data.get_mut(i).and_then(|entry| match *entry {
             Entry::Empty(_) => None,
-            Entry::Occupied(ref mut v) => Some(v)
+            Entry::Occupied(ref mut v) => Some(v),
         })
     }
-    
+
     /// Returns an iterator visiting all key-value pairs in unspecified order.
     /// The iterator's element type is `(usize, &'r V)`.
     ///
@@ -245,29 +247,38 @@ impl<V> CompactMap<V> {
     /// }
     /// ```
     pub fn iter(&self) -> Iter<V> {
-        Iter { iter: self.data.iter(), counter: 0 }
+        Iter {
+            iter: self.data.iter(),
+            counter: 0,
+        }
     }
-    
+
     /// Returns an iterator visiting all key-value pairs in unspecified order,
     /// with mutable references to the values.
     /// The iterator's element type is `(usize, &'r mut V)`
     pub fn iter_mut(&mut self) -> IterMut<V> {
-        IterMut { iter: self.data.iter_mut(), counter: 0 }
+        IterMut {
+            iter: self.data.iter_mut(),
+            counter: 0,
+        }
     }
-    
+
     /// Returns an iterator visiting all key-value pairs in unspecified order,
     /// the keys, consuming the original `CompactMap`.
     /// The iterator's element type is `(usize, V)`.
     pub fn into_iter(self) -> IntoIter<V> {
-        IntoIter { iter: self.data.into_iter(), counter: 0 }
+        IntoIter {
+            iter: self.data.into_iter(),
+            counter: 0,
+        }
     }
-    
+
     /// Iterates the map to get number of elements.
     /// O(n) where n is historical maximum element count.
     pub fn len_slow(&self) -> usize {
         self.iter().count()
     }
-    
+
     /// Trims the `CompactMap` of any excess capacity.
     ///
     /// Rescans the whole map to reindex empty slots. O(n).
@@ -301,7 +312,7 @@ impl<V> CompactMap<V> {
         self.reindex();
     }
 
-    
+
     fn reindex(&mut self) {
         self.free_head = SENTINEL;
         for i in 0..self.data.len() {
@@ -320,8 +331,14 @@ impl<V> Default for CompactMap<V> {
 }
 
 
-impl<V> Hash for CompactMap<V> where V: Hash {
-    fn hash<H>(&self, state: &mut H) where H: Hasher {
+impl<V> Hash for CompactMap<V>
+where
+    V: Hash,
+{
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: Hasher,
+    {
         for i in 0..(self.data.len()) {
             if let Entry::Occupied(ref j) = self.data[i] {
                 state.write_usize(i);
@@ -370,11 +387,14 @@ macro_rules! iterate_for_ord_and_eq {
 
 impl<V: Eq> Eq for CompactMap<V> {}
 
-// We are greater then them iif { { we have i'th slot 
+// We are greater then them iif { { we have i'th slot
 // filled in and they don't } or { data in i'th slot compares
-// "greater" to our data } } and filledness status and contained data 
+// "greater" to our data } } and filledness status and contained data
 // prior to i is the same.
-impl<V> PartialOrd<CompactMap<V>> for CompactMap<V> where V: PartialOrd<V> {
+impl<V> PartialOrd<CompactMap<V>> for CompactMap<V>
+where
+    V: PartialOrd<V>,
+{
     fn partial_cmp(&self, other: &CompactMap<V>) -> Option<Ordering> {
         iterate_for_ord_and_eq!(self, other,
                                 Some(Ordering::Greater), Some(Ordering::Less),
@@ -390,7 +410,10 @@ impl<V> PartialOrd<CompactMap<V>> for CompactMap<V> where V: PartialOrd<V> {
     }
 }
 
-impl<V> Ord for CompactMap<V> where V: Ord {
+impl<V> Ord for CompactMap<V>
+where
+    V: Ord,
+{
     fn cmp(&self, other: &CompactMap<V>) -> Ordering {
         iterate_for_ord_and_eq!(self, other,
                                 Ordering::Greater, Ordering::Less,
@@ -407,7 +430,10 @@ impl<V> Ord for CompactMap<V> where V: Ord {
 }
 
 impl<V> FromIterator<V> for CompactMap<V> {
-    fn from_iter<I>(iter: I) -> CompactMap<V> where I: IntoIterator<Item=V> {
+    fn from_iter<I>(iter: I) -> CompactMap<V>
+    where
+        I: IntoIterator<Item = V>,
+    {
         let mut c = CompactMap::new();
         // TODO size hint here maybe
         for i in iter {
@@ -417,25 +443,40 @@ impl<V> FromIterator<V> for CompactMap<V> {
     }
 }
 
-impl<'a, V> FromIterator<&'a V> for CompactMap<V> where V : Copy {
+impl<'a, V> FromIterator<&'a V> for CompactMap<V>
+where
+    V: Copy,
+{
     #[allow(map_clone)]
-    fn from_iter<I>(iter: I) -> CompactMap<V> where I: IntoIterator<Item=&'a V> {
+    fn from_iter<I>(iter: I) -> CompactMap<V>
+    where
+        I: IntoIterator<Item = &'a V>,
+    {
         FromIterator::<V>::from_iter(iter.into_iter().map(|&value| value))
     }
 }
 
 impl<V> Extend<V> for CompactMap<V> {
-    fn extend<I>(&mut self, iter: I) where I: IntoIterator<Item=V> {
+    fn extend<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = V>,
+    {
         // TODO: maybe use size hint here
         for i in iter {
             self.insert(i);
         }
     }
 }
-impl<'a, V> Extend<&'a V> for CompactMap<V> where V: Copy {
+impl<'a, V> Extend<&'a V> for CompactMap<V>
+where
+    V: Copy,
+{
     #[allow(map_clone)]
-    fn extend<I>(&mut self, iter: I) where I: IntoIterator<Item=&'a V> {
-       self.extend(iter.into_iter().map(|&value| value));
+    fn extend<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = &'a V>,
+    {
+        self.extend(iter.into_iter().map(|&value| value));
     }
 }
 
@@ -496,57 +537,63 @@ macro_rules! generate_iterator {
 }
 
 /// An iterator over the key-value pairs of a map.
-pub struct Iter<'a, V : 'a> {
+pub struct Iter<'a, V: 'a> {
     iter: slice::Iter<'a, Entry<V>>,
-    counter : usize,
+    counter: usize,
 }
-impl<'a,V> Iterator for Iter<'a,V> {
+impl<'a, V> Iterator for Iter<'a, V> {
     type Item = (usize, &'a V);
-    
+
     #[allow(match_ref_pats)]
     fn next(&mut self) -> Option<(usize, &'a V)> {
         generate_iterator!(self, const);
     }
 }
-impl<'a,V> IntoIterator for &'a CompactMap<V> {
+impl<'a, V> IntoIterator for &'a CompactMap<V> {
     type Item = (usize, &'a V);
     type IntoIter = Iter<'a, V>;
     fn into_iter(self) -> Iter<'a, V> {
-        Iter { iter: self.data.iter(), counter: 0 }
+        Iter {
+            iter: self.data.iter(),
+            counter: 0,
+        }
     }
 }
 
 /// An iterator over the key-value pairs of a map, with the
 /// values being mutable.
-pub struct IterMut<'a, V : 'a> {
+pub struct IterMut<'a, V: 'a> {
     iter: slice::IterMut<'a, Entry<V>>,
-    counter : usize,
+    counter: usize,
 }
-impl<'a,V:'a> Iterator for IterMut<'a,V> {
+impl<'a, V: 'a> Iterator for IterMut<'a, V> {
     type Item = (usize, &'a mut V);
-    
-    #[allow(unused_lifetimes,match_ref_pats)]
+
+    #[allow(unused_lifetimes, match_ref_pats)]
     fn next<'b>(&'b mut self) -> Option<(usize, &'a mut V)> {
         generate_iterator!(self, mut);
     }
 }
 
-impl<'a,V:'a> IntoIterator for &'a mut CompactMap<V> {
+impl<'a, V: 'a> IntoIterator for &'a mut CompactMap<V> {
     type Item = (usize, &'a mut V);
     type IntoIter = IterMut<'a, V>;
     fn into_iter(self) -> IterMut<'a, V> {
-        IterMut { iter: self.data.iter_mut(), counter: 0 }
+        IterMut {
+            iter: self.data.iter_mut(),
+            counter: 0,
+        }
     }
 }
 
 /// A consuming iterator over the key-value pairs of a map.
 pub struct IntoIter<V> {
     iter: vec::IntoIter<Entry<V>>,
-    counter : usize,
+    counter: usize,
 }
 impl<V> Iterator for IntoIter<V> {
     type Item = (usize, V);
-    
+
     fn next(&mut self) -> Option<(usize, V)> {
         generate_iterator!(self, plain);
     }
@@ -555,27 +602,30 @@ impl<V> IntoIterator for CompactMap<V> {
     type Item = (usize, V);
     type IntoIter = IntoIter<V>;
     fn into_iter(self) -> IntoIter<V> {
-        IntoIter { iter: self.data.into_iter(), counter: 0 }
+        IntoIter {
+            iter: self.data.into_iter(),
+            counter: 0,
+        }
     }
 }
 
 #[cfg(feature = "serde")]
 mod serdizer {
     extern crate serde;
-    
+
     use super::CompactMap;
     use super::Entry;
-    
+
     use super::SENTINEL;
     use self::serde::ser::SerializeMap;
-    
-    impl<V:serde::Serialize> serde::Serialize for CompactMap<V> {
-        fn serialize<S : serde::Serializer>(&self, s:S) -> Result<S::Ok, S::Error> {
+
+    impl<V: serde::Serialize> serde::Serialize for CompactMap<V> {
+        fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
             #[cfg(feature = "serde_ser_len")]
             let len = Some(self.len_slow());
             #[cfg(not(feature = "serde_ser_len"))]
             let len = None;
-            
+
             let mut map = s.serialize_map(len)?;
             for (k, v) in self {
                 map.serialize_entry(&k, v)?;
@@ -583,43 +633,43 @@ mod serdizer {
             map.end()
         }
     }
-    
+
     // Deserializer based on https://serde.rs/deserialize-map.html
-    
+
     use std::fmt;
     use std::marker::PhantomData;
-    
+
     use self::serde::de::{Deserialize, Deserializer, Visitor, MapAccess};
-    
+
     struct MyMapVisitor<V> {
-        marker: PhantomData<fn() -> CompactMap<V>>
+        marker: PhantomData<fn() -> CompactMap<V>>,
     }
-    
+
     impl<V> MyMapVisitor<V> {
         fn new() -> Self {
-            MyMapVisitor {
-                marker: PhantomData
-            }
+            MyMapVisitor { marker: PhantomData }
         }
     }
-    
+
     impl<'de, V> Visitor<'de> for MyMapVisitor<V>
-        where V: Deserialize<'de>
+    where
+        V: Deserialize<'de>,
     {
         type Value = CompactMap<V>;
-    
+
         // Format a message stating what data this Visitor expects to receive.
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
             formatter.write_str("a map with small nonnegative integer keys")
         }
 
         fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
-            where M: MapAccess<'de>
+        where
+            M: MapAccess<'de>,
         {
             let mut map = CompactMap::with_capacity(access.size_hint().unwrap_or(0));
-    
+
             while let Some((key, value)) = access.next_entry()? {
-            
+
                 // because of Vec::resize_default is unstable
                 while map.data.len() <= key {
                     map.data.push(Entry::Empty(SENTINEL));
@@ -627,17 +677,19 @@ mod serdizer {
                 map.data[key] = Entry::Occupied(value);
             }
             map.reindex();
-    
+
             Ok(map)
         }
     }
-    
+
     // This is the trait that informs Serde how to deserialize MyMap.
     impl<'de, V> Deserialize<'de> for CompactMap<V>
-        where V: Deserialize<'de>
+    where
+        V: Deserialize<'de>,
     {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            where D: Deserializer<'de>
+        where
+            D: Deserializer<'de>,
         {
             // Instantiate our Visitor and ask the Deserializer to drive
             // it over the input data, resulting in an instance of MyMap.
