@@ -279,6 +279,16 @@ impl<V> CompactMap<V> {
     pub fn keys(&self) -> Keys<V> {
         Keys { iter: self.iter() }
     }
+    /// Returns an iterator visiting all values in ascending order of the keys.
+    /// The iterator's element type is `&'r V`.
+    pub fn values(&self) -> Values<V> {
+        Values { iter: self.iter() }
+    }
+    /// Returns an iterator visiting all values in ascending order of the keys.
+    /// The iterator's element type is `&'r mut V`.
+    pub fn values_mut(&mut self) -> ValuesMut<V> {
+        ValuesMut { iter_mut: self.iter_mut() }
+    }
 
     /// Iterates the map to get number of elements.
     /// O(n) where n is historical maximum element count.
@@ -644,6 +654,37 @@ impl<'a, V> Iterator for Keys<'a, V> {
     fn next(&mut self) -> Option<usize> { self.iter.next().map(|e| e.0) }
     fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
 }
+
+/// An iterator over the values of a map.
+pub struct Values<'a, V: 'a> {
+    iter: Iter<'a, V>,
+}
+// FIXME(#19839) Remove in favor of `#[derive(Clone)]`
+impl<'a, V> Clone for Values<'a, V> {
+    fn clone(&self) -> Values<'a, V> {
+        Values {
+            iter: self.iter.clone()
+        }
+    }
+}
+impl<'a, V> Iterator for Values<'a, V> {
+    type Item = &'a V;
+
+    fn next(&mut self) -> Option<&'a V> { self.iter.next().map(|e| e.1) }
+    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+}
+
+/// An iterator over the values of a map.
+pub struct ValuesMut<'a, V: 'a> {
+    iter_mut: IterMut<'a, V>,
+}
+impl<'a, V> Iterator for ValuesMut<'a, V> {
+    type Item = &'a mut V;
+
+    fn next(&mut self) -> Option<&'a mut V> { self.iter_mut.next().map(|e| e.1) }
+    fn size_hint(&self) -> (usize, Option<usize>) { self.iter_mut.size_hint() }
+}
+
 
 #[cfg(feature = "serde")]
 mod serdizer {
