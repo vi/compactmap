@@ -270,7 +270,7 @@ impl<V> CompactMap<V> {
             counter: 0,
         }
     }
-    
+
     /// Returns an iterator visiting all keys in some order.
     /// The iterator's element type is `usize`.
     pub fn keys(&self) -> Keys<V> {
@@ -634,22 +634,24 @@ impl<V> IntoIterator for CompactMap<V> {
 
 
 /// An iterator over the keys of a map.
-pub struct Keys<'a, V:'a> {
+pub struct Keys<'a, V: 'a> {
     iter: Iter<'a, V>,
 }
 // FIXME(#26925) Remove in favor of `#[derive(Clone)]`
 impl<'a, V> Clone for Keys<'a, V> {
     fn clone(&self) -> Keys<'a, V> {
-        Keys {
-            iter: self.iter.clone()
-        }
+        Keys { iter: self.iter.clone() }
     }
 }
 impl<'a, V> Iterator for Keys<'a, V> {
     type Item = usize;
 
-    fn next(&mut self) -> Option<usize> { self.iter.next().map(|e| e.0) }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+    fn next(&mut self) -> Option<usize> {
+        self.iter.next().map(|e| e.0)
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 
 /// An iterator over the values of a map.
@@ -659,16 +661,18 @@ pub struct Values<'a, V: 'a> {
 // FIXME(#19839) Remove in favor of `#[derive(Clone)]`
 impl<'a, V> Clone for Values<'a, V> {
     fn clone(&self) -> Values<'a, V> {
-        Values {
-            iter: self.iter.clone()
-        }
+        Values { iter: self.iter.clone() }
     }
 }
 impl<'a, V> Iterator for Values<'a, V> {
     type Item = &'a V;
 
-    fn next(&mut self) -> Option<&'a V> { self.iter.next().map(|e| e.1) }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+    fn next(&mut self) -> Option<&'a V> {
+        self.iter.next().map(|e| e.1)
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 
 /// An iterator over the values of a map.
@@ -678,8 +682,12 @@ pub struct ValuesMut<'a, V: 'a> {
 impl<'a, V> Iterator for ValuesMut<'a, V> {
     type Item = &'a mut V;
 
-    fn next(&mut self) -> Option<&'a mut V> { self.iter_mut.next().map(|e| e.1) }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter_mut.size_hint() }
+    fn next(&mut self) -> Option<&'a mut V> {
+        self.iter_mut.next().map(|e| e.1)
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter_mut.size_hint()
+    }
 }
 
 
