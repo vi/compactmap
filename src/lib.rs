@@ -117,9 +117,6 @@ impl<V> CompactMap<V> {
         self.data.reserve_exact(len);
     }
 
-    // TODO: keys
-    // TODO: values
-    // TODO: values_mut
     // TODO: append
     // TODO: entry
 
