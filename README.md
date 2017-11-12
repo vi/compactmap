@@ -6,7 +6,8 @@ Based on [this post](https://play.rust-lang.org/?gist=599f79559d6f18cc0266&versi
 
 TODO:
 
-* Methods: drain, compact, expand, clear, keys, values, ...
-* Serde
+* DoubleEndedIterator
+* Entry (is it really needed?)
+* More thorough tests
 
 License is MIT or Apache, like for Rust itself.
