@@ -118,6 +118,7 @@ impl<V> CompactMap<V> {
     }
 
     // TODO: entry
+    // TODO: DoubleEndedIterator
 
     /// Clears the map, removing all key-value pairs.
     ///
