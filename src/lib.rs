@@ -117,7 +117,6 @@ impl<V> CompactMap<V> {
         self.data.reserve_exact(len);
     }
 
-    // TODO: append
     // TODO: entry
 
     /// Clears the map, removing all key-value pairs.
