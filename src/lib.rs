@@ -23,6 +23,7 @@ use std::ops::{Index, IndexMut};
 use std::slice;
 use std::vec;
 use std::fmt;
+use std::clone::Clone;
 
 const SENTINEL: usize = usize::MAX;
 
@@ -271,6 +272,12 @@ impl<V> CompactMap<V> {
             iter: self.data.into_iter(),
             counter: 0,
         }
+    }
+    
+    /// Returns an iterator visiting all keys in some order.
+    /// The iterator's element type is `usize`.
+    pub fn keys(&self) -> Keys<V> {
+        Keys { iter: self.iter() }
     }
 
     /// Iterates the map to get number of elements.
@@ -541,6 +548,15 @@ pub struct Iter<'a, V: 'a> {
     iter: slice::Iter<'a, Entry<V>>,
     counter: usize,
 }
+// FIXME(#26925) Remove in favor of `#[derive(Clone)]`
+impl<'a, V> Clone for Iter<'a, V> {
+    fn clone(&self) -> Iter<'a, V> {
+        Iter {
+            iter: self.iter.clone(),
+            counter: self.counter,
+        }
+    }
+}
 impl<'a, V> Iterator for Iter<'a, V> {
     type Item = (usize, &'a V);
 
@@ -607,6 +623,26 @@ impl<V> IntoIterator for CompactMap<V> {
             counter: 0,
         }
     }
+}
+
+
+/// An iterator over the keys of a map.
+pub struct Keys<'a, V:'a> {
+    iter: Iter<'a, V>,
+}
+// FIXME(#26925) Remove in favor of `#[derive(Clone)]`
+impl<'a, V> Clone for Keys<'a, V> {
+    fn clone(&self) -> Keys<'a, V> {
+        Keys {
+            iter: self.iter.clone()
+        }
+    }
+}
+impl<'a, V> Iterator for Keys<'a, V> {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<usize> { self.iter.next().map(|e| e.0) }
+    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
 }
 
 #[cfg(feature = "serde")]
