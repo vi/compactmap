@@ -326,6 +326,39 @@ impl<V> CompactMap<V> {
         self.reindex();
     }
 
+    /// Returns an iterator visiting all key-value pairs in ascending order of
+    /// the keys, emptying (but not consuming) the original `CompactMap`.
+    /// The iterator's element type is `(usize, V)`. Keeps the allocated memory for reuse.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use compactmap::CompactMap;
+    ///
+    /// let mut map = CompactMap::new();
+    /// map.insert("a");
+    /// map.insert("b");
+    /// map.insert("c");
+    /// map.remove(1);
+    ///
+    /// let vec: Vec<(usize, &str)> = map.drain().collect();
+    ///
+    /// assert_eq!(vec, [(0, "a"), (2, "c")]);
+    /// assert!(map.is_empty_slow());
+    /// assert!(map.capacity() > 0);
+    /// ```
+    pub fn drain(&mut self) -> Drain<V> {
+        fn filter<A>((i, v): (usize, Entry<A>)) -> Option<(usize, A)> {
+            match v {
+                Entry::Empty(_) => None,
+                Entry::Occupied(x) => Some((i,x)),
+            }
+        }
+        let filter: fn((usize, Entry<V>)) -> Option<(usize, V)> = filter; // coerce to fn ptr
+
+        self.free_head = SENTINEL;
+        Drain { iter: self.data.drain(..).enumerate().filter_map(filter) }
+    }
 
     fn reindex(&mut self) {
         self.free_head = SENTINEL;
@@ -689,6 +722,22 @@ impl<'a, V> Iterator for ValuesMut<'a, V> {
         self.iter_mut.size_hint()
     }
 }
+
+/// A draining iterator over the key-value pairs of a map.
+pub struct Drain<'a, V: 'a> {
+    iter: std::iter::FilterMap<
+        std::iter::Enumerate<std::vec::Drain<'a, Entry<V>>>,
+        fn((usize, Entry<V>)) -> Option<(usize, V)>
+        >
+}
+
+impl<'a, V> Iterator for Drain<'a, V> {
+    type Item = (usize, V);
+
+    fn next(&mut self) -> Option<(usize, V)> { self.iter.next() }
+    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+}
+
 
 
 #[cfg(feature = "serde")]
