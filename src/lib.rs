@@ -7,7 +7,7 @@
 //! The main trick is keeping in-place linked list of freed indexes for reuse.
 //!
 //! Serde is supported. If you need pre-computed length at serialization time
-//! (for example, for bincode), use serde_ser_len feature.
+//! (for example, for bincode), use `serde_ser_len` feature.
 
 
 #[cfg(test)]
@@ -34,8 +34,8 @@ enum Entry<V> {
 
 impl<V> Entry<V> {
     fn is_empty(&self) -> bool {
-        match self {
-            &Entry::Empty(_) => true,
+        match *self {
+            Entry::Empty(_) => true,
             _ => false,
         }
     }
@@ -142,7 +142,7 @@ impl<V> CompactMap<V> {
     /// Iterating the map to check if it is empty.
     /// O(n) where n is historical maximum element count.
     pub fn is_empty_slow(&self) -> bool {
-        return self.len_slow() == 0
+        self.len_slow() == 0
     }
     
     /// Inserts a value into the map. The map generates and returns ID of
@@ -244,14 +244,14 @@ impl<V> CompactMap<V> {
     ///     println!("{}: {}", key, value);
     /// }
     /// ```
-    pub fn iter<'a>(&'a self) -> Iter<'a, V> {
+    pub fn iter(&self) -> Iter<V> {
         Iter { iter: self.data.iter(), counter: 0 }
     }
     
     /// Returns an iterator visiting all key-value pairs in unspecified order,
     /// with mutable references to the values.
     /// The iterator's element type is `(usize, &'r mut V)`
-    pub fn iter_mut<'a>(&'a mut self) -> IterMut<'a, V> {
+    pub fn iter_mut(&mut self) -> IterMut<V> {
         IterMut { iter: self.data.iter_mut(), counter: 0 }
     }
     
@@ -468,6 +468,7 @@ impl<V: fmt::Debug> fmt::Debug for CompactMap<V> {
         f.debug_map().entries(self).finish()
     }
 }
+
 
 macro_rules! generate_iterator {
     ($self_:ident, mut) => {
