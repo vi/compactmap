@@ -24,6 +24,8 @@ use std::slice;
 use std::vec;
 use std::fmt;
 
+const SENTINEL : usize = usize::MAX;
+
 #[derive(Clone)]
 enum Entry<V> {
     Empty(usize),
@@ -74,7 +76,7 @@ impl<V> CompactMap<V> {
     pub fn new() -> CompactMap<V> {
         CompactMap {
             data: vec![],
-            free_head: usize::MAX
+            free_head: SENTINEL
         }
     }
 
@@ -90,7 +92,7 @@ impl<V> CompactMap<V> {
     pub fn with_capacity(capacity: usize) -> Self {
         CompactMap {
             data: Vec::with_capacity(capacity),
-            free_head: usize::MAX
+            free_head: SENTINEL
         }
     }
 
@@ -133,7 +135,7 @@ impl<V> CompactMap<V> {
     /// assert!(a.is_empty_slow());
     /// ```
     pub fn clear(&mut self) { 
-        self.free_head = usize::MAX;
+        self.free_head = SENTINEL;
         self.data.clear() ;
     }
     
@@ -164,7 +166,7 @@ impl<V> CompactMap<V> {
     pub fn insert(&mut self, v: V) -> usize {
         let head = self.free_head;
         let entry = Entry::Occupied(v);
-        if head == usize::MAX {
+        if head == SENTINEL {
             self.data.push(entry);
             self.data.len() - 1
         } else {
@@ -301,7 +303,7 @@ impl<V> CompactMap<V> {
 
     
     fn reindex(&mut self) {
-        self.free_head = usize::MAX;
+        self.free_head = SENTINEL;
         for i in 0..self.data.len() {
             if let Entry::Empty(ref mut head) = self.data[i] {
                 *head = self.free_head;
@@ -563,7 +565,7 @@ mod serdizer {
     use super::CompactMap;
     use super::Entry;
     
-    use std::usize;
+    use super::SENTINEL;
     use self::serde::ser::SerializeMap;
     
     impl<V:serde::Serialize> serde::Serialize for CompactMap<V> {
@@ -619,7 +621,7 @@ mod serdizer {
             
                 // because of Vec::resize_default is unstable
                 while map.data.len() <= key {
-                    map.data.push(Entry::Empty(usize::MAX));
+                    map.data.push(Entry::Empty(SENTINEL));
                 }
                 map.data[key] = Entry::Occupied(value);
             }
