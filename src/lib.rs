@@ -482,8 +482,12 @@ impl<V> FromIterator<V> for CompactMap<V> {
         I: IntoIterator<Item = V>,
     {
         let mut c = CompactMap::new();
-        // TODO size hint here maybe
-        for i in iter {
+        
+        let it = iter.into_iter();
+        
+        reasonable_reserve(&mut c.data, it.size_hint());
+        
+        for i in it {
             c.insert(i);
         }
         c
@@ -503,13 +507,30 @@ where
     }
 }
 
+fn reasonable_reserve<T>(v: &mut Vec<T>, (rmin, mbrmax) : (usize, Option<usize>)) {
+    use std::cmp::{min,max};
+    if let Some(rmax) = mbrmax {
+        if rmin == rmax {
+            v.reserve_exact(rmin);
+        } else {
+            let reasonable_reserve = max(rmin, min(rmax, 4096));
+            v.reserve(reasonable_reserve);
+        }
+    } else {
+        v.reserve(rmin);
+    }
+}
+
 impl<V> Extend<V> for CompactMap<V> {
     fn extend<I>(&mut self, iter: I)
     where
         I: IntoIterator<Item = V>,
     {
-        // TODO: maybe use size hint here
-        for i in iter {
+        let it = iter.into_iter();
+        
+        reasonable_reserve(&mut self.data, it.size_hint());
+        
+        for i in it {
             self.insert(i);
         }
     }
