@@ -243,3 +243,14 @@ fn debug() {
 
     assert_eq!(format!("{:?}", m), "{0: 44, 1: 55, 2: 66}");
 }
+
+declare_compactmap_token!(Mom);
+
+#[test]
+fn try_wrapped() {
+    use super::wrapped::CompactMap;
+    
+    let mut m: CompactMap<Mom, u64> = CompactMap::new();
+    let q : Mom = m.insert(45);
+    m.remove(q);
+}

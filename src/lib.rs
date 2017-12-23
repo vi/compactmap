@@ -9,10 +9,6 @@
 //! Serde is supported. If you need pre-computed length at serialization time
 //! (for example, for bincode), use `serde_ser_len` feature.
 
-
-#[cfg(test)]
-mod test;
-
 use std::mem;
 use std::usize;
 use std::hash::Hash;
@@ -180,6 +176,7 @@ impl<V> CompactMap<V> {
 
     /// Removes a key from the map, returning the value at the key if the key
     /// was previously in the map.
+    ///
     /// ```
     /// use compactmap::CompactMap;
     ///
@@ -849,3 +846,12 @@ mod serdizer {
         }
     }
 }
+
+/// Special version of CompactMap that helps you not to confuse those `usize` tokens
+/// with something else
+#[macro_use]
+pub mod wrapped;
+
+
+#[cfg(test)]
+mod test;
