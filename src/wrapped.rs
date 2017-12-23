@@ -385,8 +385,11 @@ impl<'a, K : Into<usize> + From<usize>, V> Iterator for Drain<'a, K, V> {
 
 /// Create usize-equivalent struct that implements From<usize> and Into<usize>
 ///
+/// For [the wrapper](wrapped/struct.CompactMap.html).
+///
 /// ```
 /// #[macro_use] extern crate compactmap;
+/// use compactmap::wrapped::CompactMap;
 /// declare_compactmap_token!(MyCompactmapIndex);
 /// # fn main(){}
 /// ```
