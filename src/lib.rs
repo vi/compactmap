@@ -8,6 +8,9 @@
 //!
 //! Serde is supported. If you need pre-computed length at serialization time
 //! (for example, for bincode), use `serde_ser_len` feature.
+//!
+//! If you are worried about losing strict typing advantages because of those 
+//! `usize`s, you can use [special wrapper](wrapped/struct.CompactMap.html)
 
 use std::mem;
 use std::usize;
