@@ -2,7 +2,7 @@
 name = "compactmap"
 version = "0.3.3"
 authors = ["Vitaly _Vi Shukela <vi0oss@gmail.com>", "Eduard-Mihai Burtescu <edy.burt@gmail.com>"]
-description = "Compact Vec-based map that choses assigns IDs for your values on it's own. Not everything is implemented so far."
+description = "Compact Vec-based map that choses assigns IDs for your values on it's own. Very similar to Slab."
 license = "MIT/Apache-2.0"
 repository = "https://github.com/vi/compactmap"
 documentation = "https://docs.rs/compactmap"

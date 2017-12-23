@@ -11,6 +11,8 @@
 //!
 //! If you are worried about losing strict typing advantages because of those 
 //! `usize`s, you can use [special wrapper](wrapped/struct.CompactMap.html)
+//!
+//! See also: [Slab](https://docs.rs/slab)
 
 use std::mem;
 use std::usize;
