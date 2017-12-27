@@ -8,8 +8,7 @@ The function and structure of CompactMap is almost the same as [Slab](https://do
 
 TODO:
 
-* DoubleEndedIterator
-* Entry (is it really needed?)
 * More thorough tests
+* Entry (is it really needed?)
 
 License is MIT or Apache, like for Rust itself.
