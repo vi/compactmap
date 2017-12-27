@@ -396,6 +396,7 @@ impl<'a, K : Into<usize> + From<usize>, V> Iterator for Drain<'a, K, V> {
 #[macro_export]
 macro_rules! declare_compactmap_token {
     ($x:ident) => {
+        #[derive(Copy,Clone,Ord,PartialOrd,Eq,PartialEq,Hash,Debug)]
         struct $x(usize);
         impl From<usize> for $x {
             fn from(x:usize) -> Self { $x(x) }
