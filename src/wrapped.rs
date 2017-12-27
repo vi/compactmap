@@ -276,14 +276,13 @@ pub struct Iter<'a, K: Into<usize> + From<usize>, V: 'a> {
 impl<'a, K: Into<usize> + From<usize>, V> Iterator for Iter<'a, K, V> {
     type Item = (K, &'a V);
 
-    #[allow(match_ref_pats)]
     fn next(&mut self) -> Option<(K, &'a V)> {
         self.inner.next().map(|(k,v)|(From::from(k),v))
-        /*if let Some((k,v)) = self.inner.next() {
-            Some((From::from(k), v))
-        } else  {
-            None
-        }*/
+    }
+}
+impl<'a, K: Into<usize> + From<usize>, V> DoubleEndedIterator for Iter<'a, K, V> {
+    fn next_back(&mut self) -> Option<(K, &'a V)> {
+        self.inner.next_back().map(|(k,v)|(From::from(k),v))
     }
 }
 impl<'a, K: Into<usize> + From<usize>, V> IntoIterator for &'a CompactMap<K,V> {
@@ -311,6 +310,11 @@ impl<'a, K: Into<usize> + From<usize>, V: 'a> Iterator for IterMut<'a, K, V> {
         self.inner.next().map(|(k,v)|(From::from(k),v))
     }
 }
+impl<'a, K: Into<usize> + From<usize>, V: 'a> DoubleEndedIterator for IterMut<'a, K, V> {
+    fn next_back<'b>(&'b mut self) -> Option<(K, &'a mut V)> {
+        self.inner.next_back().map(|(k,v)|(From::from(k),v))
+    }
+}
 
 impl<'a, K: Into<usize> + From<usize>, V: 'a> IntoIterator for &'a mut CompactMap<K, V> {
     type Item = (K, &'a mut V);
@@ -334,6 +338,11 @@ impl<K: Into<usize> + From<usize>, V> Iterator for IntoIter<K,V> {
 
     fn next(&mut self) -> Option<(K, V)> {
         self.inner.next().map(|(k,v)|(From::from(k),v))
+    }
+}
+impl<K: Into<usize> + From<usize>, V> DoubleEndedIterator for IntoIter<K,V> {
+    fn next_back(&mut self) -> Option<(K, V)> {
+        self.inner.next_back().map(|(k,v)|(From::from(k),v))
     }
 }
 impl<K: Into<usize> + From<usize>, V> IntoIterator for CompactMap<K,V> {
@@ -365,6 +374,11 @@ impl<'a, K : Into<usize> + From<usize>, V> Iterator for Keys<'a, K, V> {
         self.inner.size_hint()
     }
 }
+impl<'a, K : Into<usize> + From<usize>, V> DoubleEndedIterator for Keys<'a, K, V> {
+    fn next_back(&mut self) -> Option<K> {
+        self.inner.next_back().map(|k| From::from(k))
+    }
+}
 
 
 /// A draining iterator over the key-value pairs of a map.
@@ -380,6 +394,11 @@ impl<'a, K : Into<usize> + From<usize>, V> Iterator for Drain<'a, K, V> {
         self.inner.next().map(|(k,v)|(From::from(k),v)) 
     }
     fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
+}
+impl<'a, K : Into<usize> + From<usize>, V> DoubleEndedIterator for Drain<'a, K, V> {
+    fn next_back(&mut self) -> Option<(K, V)> {
+        self.inner.next_back().map(|(k,v)|(From::from(k),v)) 
+    }
 }
 
 

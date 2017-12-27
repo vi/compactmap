@@ -25,6 +25,7 @@ use std::slice;
 use std::vec;
 use std::fmt;
 use std::clone::Clone;
+use std::iter::DoubleEndedIterator;
 
 const SENTINEL: usize = usize::MAX;
 
@@ -118,8 +119,8 @@ impl<V> CompactMap<V> {
         self.data.reserve_exact(len);
     }
 
+    // TODO: more tests
     // TODO: entry
-    // TODO: DoubleEndedIterator
 
     /// Clears the map, removing all key-value pairs.
     ///
@@ -606,6 +607,32 @@ macro_rules! generate_iterator {
     };
 }
 
+macro_rules! generate_rev_iterator {
+    ($self_:ident, mut) => {
+        generate_iterator!($self_ ; & mut Entry::Occupied(ref mut x), x);
+    };
+    ($self_:ident, const) => {
+        generate_iterator!($self_ ; &     Entry::Occupied(ref     x), x);
+    };
+    ($self_:ident, plain) => {
+        generate_iterator!($self_ ;       Entry::Occupied(        x), x);
+    };
+    ($self_:ident ; $pp:pat, $x:ident) => {
+        loop {
+            if $self_.counter == 0 { return None; }
+            let e = $self_.iter.next_back();
+            $self_.counter-=1;
+            if let Some(a) = e {
+                if let $pp = a {
+                    return Some(($self_.counter-1, $x));
+                }
+            } else {
+                return None;
+            }
+        }
+    };
+}
+
 /// An iterator over the key-value pairs of a map.
 pub struct Iter<'a, V: 'a> {
     iter: slice::Iter<'a, Entry<V>>,
@@ -626,6 +653,14 @@ impl<'a, V> Iterator for Iter<'a, V> {
     #[allow(match_ref_pats)]
     fn next(&mut self) -> Option<(usize, &'a V)> {
         generate_iterator!(self, const);
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, self.iter.size_hint().1)
+    }
+}
+impl<'a, V> DoubleEndedIterator for Iter<'a, V>  {
+    fn next_back(&mut self) -> Option<(usize, &'a V)> {
+        generate_rev_iterator!(self, const);
     }
 }
 impl<'a, V> IntoIterator for &'a CompactMap<V> {
@@ -648,9 +683,16 @@ pub struct IterMut<'a, V: 'a> {
 impl<'a, V: 'a> Iterator for IterMut<'a, V> {
     type Item = (usize, &'a mut V);
 
-    #[allow(unused_lifetimes, match_ref_pats)]
     fn next<'b>(&'b mut self) -> Option<(usize, &'a mut V)> {
         generate_iterator!(self, mut);
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, self.iter.size_hint().1)
+    }
+}
+impl<'a, V: 'a> DoubleEndedIterator for IterMut<'a, V> {
+    fn next_back<'b>(&'b mut self) -> Option<(usize, &'a mut V)> {
+        generate_rev_iterator!(self, mut);
     }
 }
 
@@ -675,6 +717,14 @@ impl<V> Iterator for IntoIter<V> {
 
     fn next(&mut self) -> Option<(usize, V)> {
         generate_iterator!(self, plain);
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, self.iter.size_hint().1)
+    }
+}
+impl<V> DoubleEndedIterator for IntoIter<V> {
+    fn next_back(&mut self) -> Option<(usize, V)> {
+        generate_rev_iterator!(self, plain);
     }
 }
 impl<V> IntoIterator for CompactMap<V> {
@@ -709,6 +759,11 @@ impl<'a, V> Iterator for Keys<'a, V> {
         self.iter.size_hint()
     }
 }
+impl<'a, V> DoubleEndedIterator for Keys<'a, V> {
+    fn next_back(&mut self) -> Option<usize> {
+        self.iter.next_back().map(|e| e.0)
+    }
+}
 
 /// An iterator over the values of a map.
 pub struct Values<'a, V: 'a> {
@@ -730,6 +785,11 @@ impl<'a, V> Iterator for Values<'a, V> {
         self.iter.size_hint()
     }
 }
+impl<'a, V> DoubleEndedIterator for Values<'a, V> {
+    fn next_back(&mut self) -> Option<&'a V> {
+        self.iter.next_back().map(|e| e.1)
+    }
+}
 
 /// An iterator over the values of a map.
 pub struct ValuesMut<'a, V: 'a> {
@@ -743,6 +803,11 @@ impl<'a, V> Iterator for ValuesMut<'a, V> {
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter_mut.size_hint()
+    }
+}
+impl<'a, V> DoubleEndedIterator for ValuesMut<'a, V> {
+    fn next_back(&mut self) -> Option<&'a mut V> {
+        self.iter_mut.next_back().map(|e| e.1)
     }
 }
 
@@ -759,6 +824,9 @@ impl<'a, V> Iterator for Drain<'a, V> {
 
     fn next(&mut self) -> Option<(usize, V)> { self.iter.next() }
     fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+}
+impl<'a, V> DoubleEndedIterator for Drain<'a, V> {
+    fn next_back(&mut self) -> Option<(usize, V)> { self.iter.next_back() }
 }
 
 
