@@ -109,6 +109,13 @@ impl<K:Into<usize> + From<usize>, V> CompactMap<K,V> {
     pub fn insert(&mut self, v: V) -> K {
         From::from(self.inner.insert(v))
     }
+    
+    /// See [`super::CompactMap::insert_with`](../struct.CompactMap.html#method.insert_with)
+    pub fn insert_with<F>(&mut self, f: F) -> K
+        where F: FnOnce(K) -> V
+    {
+        From::from(self.inner.insert_with(|key|f(key.into())))
+    }
 
     /// See [`super::CompactMap::remove`](../struct.CompactMap.html#method.remove)
     pub fn remove(&mut self, i: K) -> Option<V> {
