@@ -164,19 +164,49 @@ impl<V> CompactMap<V> {
     /// assert_eq!(map.len_slow(), 4);
     /// ```
     pub fn insert(&mut self, v: V) -> usize {
+        self.insert_with(move |_|v)
+    }
+    
+    /// Inserts a value returned by function into the map. The map generates
+    /// ID that is both supplied as argument to the function and returned.
+    ///
+    /// This function is useful when creating values that must contain their
+    /// key.
+    ///
+    /// Based on the VacantEntry feature of Slab.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compactmap::*;
+    /// let mut cm = CompactMap::new();
+    ///
+    /// let hello = cm.insert_with(|key| {
+    ///     (key, "hello")
+    /// });
+    ///
+    /// assert_eq!(hello, cm[hello].0);
+    /// assert_eq!("hello", cm[hello].1);
+    /// ```
+    pub fn insert_with<F>(&mut self, f: F) -> usize
+        where F: FnOnce(usize) -> V
+    {
         let head = self.free_head;
-        let entry = Entry::Occupied(v);
         if head == SENTINEL {
+            let key = self.data.len();
+            let entry = Entry::Occupied(f(key));
             self.data.push(entry);
-            self.data.len() - 1
+            key
         } else {
+            let key = head;
+            let entry = Entry::Occupied(f(key));
             match mem::replace(&mut self.data[head], entry) {
                 Entry::Empty(next) => {
                     self.free_head = next;
-                    head
                 }
                 Entry::Occupied(_) => unreachable!(),
             }
+            key
         }
     }
 
@@ -828,7 +858,6 @@ impl<'a, V> Iterator for Drain<'a, V> {
 impl<'a, V> DoubleEndedIterator for Drain<'a, V> {
     fn next_back(&mut self) -> Option<(usize, V)> { self.iter.next_back() }
 }
-
 
 
 #[cfg(feature = "serde")]
