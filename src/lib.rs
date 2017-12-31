@@ -951,7 +951,7 @@ mod serdizer {
     }
 }
 
-/// Special version of CompactMap that helps you not to confuse those `usize` tokens
+/// Special version of `CompactMap` that helps you not to confuse those `usize` tokens
 /// with something else
 #[macro_use]
 pub mod wrapped;

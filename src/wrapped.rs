@@ -4,7 +4,7 @@ use ::std::iter::FromIterator;
 use ::std::ops::{Index, IndexMut};
 use ::std::fmt;
 
-/// Special version of CompactMap that uses your usize-equivalent types as keys
+/// Special version of `CompactMap` that uses your usize-equivalent types as keys
 /// You are expected to use newtype-style structs like `struct MyToken(usize);` for this
 /// If needed, you can cheat with `into_unwrapped`, `unwrapped` and so on.
 ///
@@ -374,7 +374,7 @@ impl<'a, K : Into<usize> + From<usize>, V> Iterator for Keys<'a, K, V> {
     type Item = K;
 
     fn next(&mut self) -> Option<K> {
-        self.inner.next().map(|k| From::from(k))
+        self.inner.next().map(From::from)
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.inner.size_hint()
@@ -382,7 +382,7 @@ impl<'a, K : Into<usize> + From<usize>, V> Iterator for Keys<'a, K, V> {
 }
 impl<'a, K : Into<usize> + From<usize>, V> DoubleEndedIterator for Keys<'a, K, V> {
     fn next_back(&mut self) -> Option<K> {
-        self.inner.next_back().map(|k| From::from(k))
+        self.inner.next_back().map(From::from)
     }
 }
 
