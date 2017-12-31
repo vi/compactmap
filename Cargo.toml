@@ -17,3 +17,6 @@ serde_ser_len = []
 [dev-dependencies]
 quickcheck = "0.5"
 slab = "0.4"
+serde_json = "^1.0"
+bincode = "^0.9"
+

@@ -3,6 +3,10 @@
 
 extern crate quickcheck;
 extern crate slab;
+#[cfg(feature = "serde")]
+extern crate serde_json;
+#[cfg(all(feature="serde", feature = "serde_ser_len"))]
+extern crate bincode;
 
 // Check against slab
 
@@ -11,6 +15,10 @@ enum Action {
     Insert(u16),
     Remove(usize),
     ShrinkToFit,
+    #[cfg(feature = "serde")]
+    SerdeJson,
+    #[cfg(all(feature="serde", feature = "serde_ser_len"))]
+    SerdeBincode,
 }
 
 type ActionSequence = Vec<Action>;
@@ -19,6 +27,15 @@ type ActionSequence = Vec<Action>;
 
 impl quickcheck::Arbitrary for Action {
     fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
+        #[cfg(feature = "serde")]
+        {if g.gen_weighted_bool(100) {
+            return Action::SerdeJson
+        }}
+        #[cfg(all(feature="serde", feature = "serde_ser_len"))]
+        {if g.gen_weighted_bool(100) {
+            return Action::SerdeBincode
+        }}
+        
         if g.gen_weighted_bool(100) {
             Action::ShrinkToFit
         } else
@@ -65,6 +82,16 @@ fn check(s: ActionSequence) -> bool {
             Action::ShrinkToFit => {
                 //println!("shrink");
                 cm.shrink_to_fit();
+            },
+            #[cfg(feature = "serde")]
+            Action::SerdeJson => {
+                let s = serde_json::to_string(&cm).unwrap();
+                cm = serde_json::from_str(&s).unwrap();
+            },
+            #[cfg(all(feature="serde", feature = "serde_ser_len"))]
+            Action::SerdeBincode => {
+                let s = bincode::serialize(&cm, bincode::Infinite).unwrap();
+                cm = bincode::deserialize(&s).unwrap();
             },
         }
     }
