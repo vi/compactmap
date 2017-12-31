@@ -36,10 +36,10 @@ enum Entry<V> {
 }
 
 impl<V> Entry<V> {
-    fn is_empty(&self) -> bool {
+    fn is_not_empty(&self) -> bool {
         match *self {
-            Entry::Empty(_) => true,
-            _ => false,
+            Entry::Empty(_) => false,
+            _ => true,
         }
     }
 }
@@ -326,11 +326,11 @@ impl<V> CompactMap<V> {
         self.iter().count()
     }
 
-    /// Trims the `CompactMap` of any excess capacity.
+    /// Trims the `CompactMap` of some excess capacity.
     ///
     /// Rescans the whole map to reindex empty slots. O(n).
     ///
-    /// The collection may reserve more space to avoid frequent reallocations.
+    /// Empty slots that are not at the end of the map remain allocated.
     ///
     /// # Examples
     ///
@@ -345,15 +345,17 @@ impl<V> CompactMap<V> {
     /// map.insert("555");
     /// map.remove(1);
     /// map.shrink_to_fit();
-    /// assert_eq!(map.capacity(), 2);
+    /// assert_eq!(map.capacity(), 3);
     /// ```
     pub fn shrink_to_fit(&mut self) {
+        
         // strip off trailing `Empty`s
-        if let Some(idx) = self.data.iter().rposition(Entry::is_empty) {
+        if let Some(idx) = self.data.iter().rposition(Entry::is_not_empty) {
             self.data.truncate(idx + 1);
         } else {
             self.data.clear();
         };
+        
 
         self.data.shrink_to_fit();
         self.reindex();
