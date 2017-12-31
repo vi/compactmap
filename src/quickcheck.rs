@@ -1,6 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused)]
-
 extern crate quickcheck;
 extern crate slab;
 #[cfg(feature = "serde")]

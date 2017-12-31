@@ -93,7 +93,6 @@ impl<K:Into<usize> + From<usize>, V> CompactMap<K,V> {
     }
 
     // TODO: entry
-    // TODO: DoubleEndedIterator
 
     /// See [`super::CompactMap::clear`](../struct.CompactMap.html#method.clear)
     pub fn clear(&mut self) {
