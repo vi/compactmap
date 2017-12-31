@@ -957,3 +957,6 @@ pub mod wrapped;
 
 #[cfg(test)]
 mod test;
+
+#[cfg(test)]
+mod quickcheck;
