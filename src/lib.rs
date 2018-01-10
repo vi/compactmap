@@ -278,30 +278,21 @@ impl<V> CompactMap<V> {
     /// }
     /// ```
     pub fn iter(&self) -> Iter<V> {
-        Iter {
-            iter: self.data.iter(),
-            counter: 0,
-        }
+        IntoIterator::into_iter(self)
     }
 
     /// Returns an iterator visiting all key-value pairs in unspecified order,
     /// with mutable references to the values.
     /// The iterator's element type is `(usize, &'r mut V)`
     pub fn iter_mut(&mut self) -> IterMut<V> {
-        IterMut {
-            iter: self.data.iter_mut(),
-            counter: 0,
-        }
+        IntoIterator::into_iter(self)
     }
 
     /// Returns an iterator visiting all key-value pairs in unspecified order,
     /// the keys, consuming the original `CompactMap`.
     /// The iterator's element type is `(usize, V)`.
     pub fn into_iter(self) -> IntoIter<V> {
-        IntoIter {
-            iter: self.data.into_iter(),
-            counter: 0,
-        }
+        IntoIterator::into_iter(self)
     }
 
     /// Returns an iterator visiting all keys in some order.
@@ -641,22 +632,22 @@ macro_rules! generate_iterator {
 
 macro_rules! generate_rev_iterator {
     ($self_:ident, mut) => {
-        generate_iterator!($self_ ; & mut Entry::Occupied(ref mut x), x);
+        generate_rev_iterator!($self_ ; & mut Entry::Occupied(ref mut x), x);
     };
     ($self_:ident, const) => {
-        generate_iterator!($self_ ; &     Entry::Occupied(ref     x), x);
+        generate_rev_iterator!($self_ ; &     Entry::Occupied(ref     x), x);
     };
     ($self_:ident, plain) => {
-        generate_iterator!($self_ ;       Entry::Occupied(        x), x);
+        generate_rev_iterator!($self_ ;       Entry::Occupied(        x), x);
     };
     ($self_:ident ; $pp:pat, $x:ident) => {
         loop {
             if $self_.counter == 0 { return None; }
             let e = $self_.iter.next_back();
-            $self_.counter-=1;
+            $self_.counter_back-=1;
             if let Some(a) = e {
                 if let $pp = a {
-                    return Some(($self_.counter-1, $x));
+                    return Some(($self_.counter_back, $x));
                 }
             } else {
                 return None;
@@ -669,6 +660,7 @@ macro_rules! generate_rev_iterator {
 pub struct Iter<'a, V: 'a> {
     iter: slice::Iter<'a, Entry<V>>,
     counter: usize,
+    counter_back: usize,
 }
 // FIXME(#26925) Remove in favor of `#[derive(Clone)]`
 impl<'a, V> Clone for Iter<'a, V> {
@@ -676,6 +668,7 @@ impl<'a, V> Clone for Iter<'a, V> {
         Iter {
             iter: self.iter.clone(),
             counter: self.counter,
+            counter_back: self.counter_back,
         }
     }
 }
@@ -702,6 +695,7 @@ impl<'a, V> IntoIterator for &'a CompactMap<V> {
         Iter {
             iter: self.data.iter(),
             counter: 0,
+            counter_back: self.data.len(),
         }
     }
 }
@@ -711,6 +705,7 @@ impl<'a, V> IntoIterator for &'a CompactMap<V> {
 pub struct IterMut<'a, V: 'a> {
     iter: slice::IterMut<'a, Entry<V>>,
     counter: usize,
+    counter_back: usize,
 }
 impl<'a, V: 'a> Iterator for IterMut<'a, V> {
     type Item = (usize, &'a mut V);
@@ -732,9 +727,11 @@ impl<'a, V: 'a> IntoIterator for &'a mut CompactMap<V> {
     type Item = (usize, &'a mut V);
     type IntoIter = IterMut<'a, V>;
     fn into_iter(self) -> IterMut<'a, V> {
+        let cb = self.data.len();
         IterMut {
             iter: self.data.iter_mut(),
             counter: 0,
+            counter_back: cb,
         }
     }
 }
@@ -743,6 +740,7 @@ impl<'a, V: 'a> IntoIterator for &'a mut CompactMap<V> {
 pub struct IntoIter<V> {
     iter: vec::IntoIter<Entry<V>>,
     counter: usize,
+    counter_back: usize,
 }
 impl<V> Iterator for IntoIter<V> {
     type Item = (usize, V);
@@ -763,9 +761,11 @@ impl<V> IntoIterator for CompactMap<V> {
     type Item = (usize, V);
     type IntoIter = IntoIter<V>;
     fn into_iter(self) -> IntoIter<V> {
+        let cb = self.data.len();
         IntoIter {
             iter: self.data.into_iter(),
             counter: 0,
+            counter_back: cb,
         }
     }
 }

@@ -228,6 +228,27 @@ fn iter() {
 }
 
 #[test]
+fn iter_back() {
+    let mut m1: CompactMap<u64> = CompactMap::new();
+    m1.insert(10);
+    m1.insert(20);
+    m1.insert(30);
+    m1.insert(40);
+    m1.insert(50);
+
+    {
+        let mut iter = (&m1).into_iter();
+        assert_eq!(iter.next(), Some((0, &10)));
+        assert_eq!(iter.next_back(), Some((4, &50)));
+        assert_eq!(iter.next(), Some((1, &20)));
+        assert_eq!(iter.next(), Some((2, &30)));
+        assert_eq!(iter.next_back(), Some((3, &40)));
+        assert_eq!(iter.next_back(), None);
+        assert_eq!(iter.next(), None);
+    }
+}
+
+#[test]
 fn debug() {
     let mut m: CompactMap<u64> = CompactMap::new();
     let i44 = m.insert(44);
